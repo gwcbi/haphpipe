@@ -79,6 +79,7 @@ def refine_assembly(fq1=None, fq2=None, fqU=None, assembly_fa=None, outdir='.',
     
     # Outputs
     out_refined = os.path.join(outdir, 'refined.fa')
+    out_vcf = os.path.join(outdir, 'variants.vcf.gz')    
     
     # Temporary directory
     tempdir = create_tempdir('refine_assembly')
@@ -157,16 +158,16 @@ def refine_assembly(fq1=None, fq2=None, fqU=None, assembly_fa=None, outdir='.',
         '-ploidy', '4',
         '-I', os.path.join(tempdir, 'realign.bam'),
         '-R', curref,
-        '-o', os.path.join(tempdir, 'tmp.vcf.gz'),
+        '-o', out_vcf,
     ]
     command_runner([cmd8,cmd9,cmd10,cmd11,], 'refine_assembly:consensus', debug)
     
     # Call consensus from VCF
-    if os.path.exists(os.path.join(tempdir, 'tmp.vcf.gz')):
+    if os.path.exists(out_vcf):
         with open(out_refined, 'w') as outh:
-            vcf_to_fasta(os.path.join(tempdir, 'tmp.vcf.gz'), sampidx=0, min_dp=min_dp, outfile=outh)
+            vcf_to_fasta(out_vcf, sampidx=0, min_dp=min_dp, outfile=outh)
     else:
-        print >>sys.stderr, 'VCF file %s not found' % os.path.join(tempdir, 'tmp.vcf.gz')
+        print >>sys.stderr, 'VCF file %s not found' % out_vcf
 
     if not keep_tmp:
         remove_tempdir(tempdir, 'assemble_scaffold')

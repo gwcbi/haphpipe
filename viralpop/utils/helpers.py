@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sysutils
+from itertools import tee, izip
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
@@ -90,3 +91,9 @@ def guess_encoding(fh, nsamp=100):
         
     """
     return 'Phred+64' if maxq > 'K' else 'Phred+33'
+
+def pairwise(iterable):
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = tee(iterable)
+    next(b, None)
+    return izip(a, b)

@@ -15,7 +15,7 @@ __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--fq1', type=existing_file, required=True,
+    group1.add_argument('--fq1', type=existing_file,
                         help='Fastq file with read 1')
     group1.add_argument('--fq2', type=existing_file,
                         help='Fastq file with read 1')
@@ -75,7 +75,7 @@ def assemble_denovo(fq1=None, fq2=None, fqU=None, outdir='.',
     if input_reads in ['paired', 'both', ]:
         cmd1 += ['--left', fq1, '--right', fq2, ]
     elif input_reads in ['single', 'both', ]:
-        cmd1 += ['--single', fq1, ]
+        cmd1 += ['--single', fqU, ]
     
     # Copy command
     cmd2 = ['cp',

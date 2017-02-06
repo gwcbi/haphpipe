@@ -11,8 +11,9 @@ from stages import ec_reads
 from stages import assemble_denovo
 # from stages import assign_contigs
 from stages import assemble_scaffold
-from stages import impute_ref
+# from stages import impute_ref
 from stages import refine_assembly
+from stages import fix_consensus
 from stages import vcf_to_fasta
 
 if __name__ == '__main__':
@@ -25,8 +26,9 @@ if __name__ == '__main__':
     assemble_denovo.stageparser(sub.add_parser('assemble_denovo'))
     # assign_contigs.stageparser(sub.add_parser('assign_contigs'))
     assemble_scaffold.stageparser(sub.add_parser('assemble_scaffold'))
-    impute_ref.stageparser(sub.add_parser('impute_ref'))
-    refine_assembly.stageparser(sub.add_parser('refine_assembly'))    
+    # impute_ref.stageparser(sub.add_parser('impute_ref'))
+    refine_assembly.stageparser(sub.add_parser('refine_assembly'))
+    fix_consensus.stageparser(sub.add_parser('fix_consensus'))
     vcf_to_fasta.stageparser(sub.add_parser('vcf_to_fasta'))
     
     args = parser.parse_args()

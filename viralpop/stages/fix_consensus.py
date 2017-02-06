@@ -8,14 +8,13 @@ import argparse
 
 from Bio import SeqIO
 
+from utils.helpers import guess_encoding
 from utils.sysutils import PipelineStepError, command_runner
 from utils.sysutils import check_dependency, existing_file, existing_dir, args_params
 from utils.sysutils import create_tempdir, remove_tempdir
-from utils.sequtils import wrap
-from vcf_to_fasta import vcf_to_fasta
-
 from utils.sequtils import wrap, extract_amplicons
-from utils.alignutils import TilingRow, align_nucmer, show_aligns, overlapper
+from vcf_to_fasta import vcf_to_fasta
+from utils.alignutils import assemble_to_ref
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
@@ -28,19 +27,19 @@ def stageparser(parser):
                         help='Fastq file with read 1')
     group1.add_argument('--fqU', type=existing_file,
                         help='Fastq file with unpaired reads')
-    group1.add_argument('--con_fa', type=existing_file, required=True,
-                        help='Fasta file with consensus sequence')
+    group1.add_argument('--assembly_fa', type=existing_file, required=True,
+                        help='Fasta file with assembly')
     group1.add_argument('--ref_fa', type=existing_file, required=True,
                         help='Fasta file with reference sequence')
     group1.add_argument('--outdir', type=existing_dir,
                         help='Output directory')
     
     group2 = parser.add_argument_group('Fix consensus options')
-    # group2.add_argument('--bt2_preset', 
-    #                     choices=['very-fast', 'fast', 'sensitive', 'very-sensitive',
-    #                              'very-fast-local', 'fast-local', 'sensitive-local',
-    #                              'very-sensitive-local',],
-    #                     help='Bowtie2 preset to use')
+    group2.add_argument('--bt2_preset', 
+                        choices=['very-fast', 'fast', 'sensitive', 'very-sensitive',
+                                 'very-fast-local', 'fast-local', 'sensitive-local',
+                                 'very-sensitive-local',],
+                        help='Bowtie2 preset to use')
     # group2.add_argument('--min_dp', type=int,
     #                     help='Minimum depth to call position')
     group2.add_argument('--rgid',
@@ -57,7 +56,7 @@ def stageparser(parser):
                         help='Print commands but do not run')
     parser.set_defaults(func=fix_consensus)
 
-def fix_consensus(fq1=None, fq2=None, fqU=None, con_fa=None, ref_fa=None, outdir='.',
+def fix_consensus(fq1=None, fq2=None, fqU=None, assembly_fa=None, ref_fa=None, outdir='.',
         bt2_preset='very-sensitive', min_dp=1, rgid='test',
         ncpu=1, encoding=None, keep_tmp=False, debug=False,
     ):
@@ -80,23 +79,27 @@ def fix_consensus(fq1=None, fq2=None, fqU=None, con_fa=None, ref_fa=None, outdir
     check_dependency('picard')
     check_dependency('gatk')
     
-    # Outputs
-    out_con = os.path.join(outdir, 'consensus.fasta')
-    out_bam = os.path.join(outdir, 'aligned.bam')
-    out_vcf = os.path.join(outdir, 'variants.vcf')    
+    # Check encoding
+    if encoding is None:
+        encoding = guess_encoding(fq1) if input_reads == 'paired' else guess_encoding(fqU)
     
     # Temporary directory
     tempdir = create_tempdir('fix_consensus')
+    
+    # Outputs
+    ret = []
     
     # Align consensus to reference
     check_dependency('nucmer')
     check_dependency('delta-filter')
     check_dependency('show-tiling')
-    
+
     print >>sys.stderr, 'Align consensus to reference'
-    asm_dict = {s.id:s for s in SeqIO.parse(con_fa, 'fasta')}
+    asm_dict = {s.id:s for s in SeqIO.parse(assembly_fa, 'fasta')}
     ref_dict = {s.id:s for s in SeqIO.parse(ref_fa, 'fasta')}
     
+    scaffolds = {}
+    chrom_to_ref = {}
     for chrom in sorted(asm_dict.keys()):
         # Extract amplicons, allow for longer strings of "n"    
         amps = extract_amplicons(chrom, str(asm_dict[chrom].seq), 200)
@@ -105,27 +108,135 @@ def fix_consensus(fq1=None, fq2=None, fqU=None, con_fa=None, ref_fa=None, outdir
             for i, amp in enumerate(amps):
                 print >>outh, '>%s.%d' % (amp[0].split()[0], i)
                 print >>outh, '%s' % amp[1]
-
-        # Align amplicons
-        fil, til = align_nucmer(tmp_amplicons_fa, ref_fa, tempdir)
         
-        # Parse tiling
-        tr_list = [TilingRow(l) for l in open(til, 'rU')]
+        tmp = assemble_to_ref(ref_fa, tmp_amplicons_fa, tempdir)
+        assert len(tmp) == 1, "Too many chromosomes were found for single scaffold"
+        chrom_to_ref[chrom], scaffolds[chrom] = tmp.items()[0]
+    
+    # Output scaffolds as FASTA
+    ret.append(os.path.join(outdir, 'consensus.fasta'))
+    with open(os.path.join(outdir, 'consensus.fasta'), 'w') as outh:
+        for chrom in sorted(scaffolds.keys()):
+            s = scaffolds[chrom].scaffold()
+            print >>outh, '>%s\n%s' % (chrom, wrap(s))
 
-        # Get references
-        refs = list(set([tr.ref for tr in tr_list]))
-        if not len(refs) == 1:
-            raise PipelineStepError("Amplicons align to multiple references")
+    # Output alignments for other pipeline stages
+    with open(os.path.join(outdir, 'ref_align.fasta'), 'w') as outh:
+        for chrom in sorted(scaffolds.keys()):
+            print >>outh, '>%s\n%s' % (chrom_to_ref[chrom], scaffolds[chrom].raln())
+            print >>outh, '>%s\n%s' % (chrom, scaffolds[chrom].qaln())
+    
+    # Copy and index consensus reference
+    curref = os.path.join(tempdir, 'initial.fasta')
+    cmd1 = ['cp', os.path.join(outdir, 'consensus.fasta'), curref]
+    cmd2 = ['samtools', 'faidx', curref]
+    cmd3 = ['picard', 'CreateSequenceDictionary', 
+            'R=%s' % curref, 'O=%s' % os.path.join(tempdir, 'initial.dict')]
+    cmd4 = ['bowtie2-build', curref, os.path.join(tempdir, 'initial')]
+    command_runner([cmd1,cmd2,cmd3,cmd4], 'fix_consensus:index_ref', debug)
+    
+    # Align with bowtie2
+    out_bt2 = os.path.join(outdir, 'bowtie2.out')
+    cmd5 = [
+        'bowtie2',
+        '-p', '%d' % ncpu,
+        '--phred33' if encoding=="Phred+33" else '--phred64',
+        '--no-unal',
+        '--rg-id', rgid,
+        '--rg', 'SM:%s' % rgid,
+        '--rg', 'LB:1',
+        '--rg', 'PU:1',
+        '--rg', 'PL:illumina',
+        '--%s' % bt2_preset,
+        '-x', '%s' % os.path.join(tempdir, 'initial'),
+    ]
+    if input_reads in ['paired', 'both', ]:
+        cmd5 += ['-1', fq1, '-2', fq2,]
+    elif input_reads in ['single', 'both', ]:
+        cmd5 += ['-U', fqU, ]
+    cmd5 += ['-S', os.path.join(tempdir, 'tmp.sam'), ]
+    cmd5 += ['2>&1', '|', 'tee', out_bt2, ] 
+    cmd6 = ['samtools', 'view', '-bS', os.path.join(tempdir, 'tmp.sam'), '>', os.path.join(tempdir, 'unsorted.bam'),]
+    cmd7 = ['samtools', 'sort', os.path.join(tempdir, 'unsorted.bam'), os.path.join(tempdir, 'all'),]
+    cmd8 = ['samtools', 'index',  os.path.join(tempdir, 'all.bam'),]
+    cmd9 = ['rm', os.path.join(tempdir, 'tmp.sam'), os.path.join(tempdir, 'unsorted.bam'), ]
+    command_runner([cmd5,cmd6,cmd7,cmd8,cmd9], 'fix_consensus:align', debug)
+    
+    # MarkDuplicates
+    cmd10 = [
+        'picard', 'MarkDuplicates',
+        'REMOVE_DUPLICATES=true',
+        'CREATE_INDEX=true',
+        'M=%s' % os.path.join(tempdir, 'rmdup.metrics.txt'),
+        'I=%s' % os.path.join(tempdir, 'all.bam'),
+        'O=%s' % os.path.join(tempdir, 'rmdup.bam'),
+    ]
+    # RealignerTargetCreator
+    cmd11 = [
+        'gatk', '-T', 'RealignerTargetCreator',
+        '-I', os.path.join(tempdir, 'rmdup.bam'),
+        '-R', curref,
+        '-o', os.path.join(tempdir, 'tmp.intervals'),
+    ]
+    # IndelRealigner
+    cmd12 = [
+        'gatk', '-T', 'IndelRealigner',
+        '-maxReads', '1000000',
+        '-dt', 'NONE',
+        '-I', os.path.join(tempdir, 'rmdup.bam'),
+        '-R', curref,
+        '-targetIntervals', os.path.join(tempdir, 'tmp.intervals'),
+        '-o', os.path.join(tempdir, 'final.bam')
+    ]
+    command_runner([cmd10,cmd11,cmd12,], 'fix_consensus:realign', debug)
 
-        ref = refs[0]
-        ranked = sorted(tr_list, key=lambda x:x.qry_alen, reverse=True)
-        for tr in tr_list:
-            tr.ref_align(fil)
-        
+    # UnifiedGenotyper
+    cmd13 = [
+        'gatk', '-T', 'UnifiedGenotyper',
+        '--num_threads', '%d' % ncpu,
+        '-glm', 'BOTH',
+        '--baq', 'OFF',
+        '--useOriginalQualities',
+        '-dt', 'NONE',
+        # '-stand_call_conf', '0',
+        # '-stand_emit_conf', '0',
+        '-A', 'AlleleBalance',
+        '--min_base_quality_score', '15',
+        '-ploidy', '4',
+        '-I', os.path.join(tempdir, 'final.bam'),
+        '-R', curref,
+        '-o', os.path.join(outdir, 'variants.ug.vcf.gz'),
+    ]
+    command_runner([cmd13,], 'fix_consensus:Unified Genotyper', debug)
+    
+    cmd14 = [
+        'freebayes',
+         '--min-alternate-fraction', '0.01'
+         '--pooled-continuous',
+         '--standard-filters',
+         '--ploidy 1',
+         '--haplotype-length', '0',
+         '-f', curref,
+         os.path.join(tempdir, 'final.bam'),
+    ]
+    cmd14 += ['|', 'bcftools', 'view', '-Oz',]
+    cmd14 += ['|', 'bcftools', 'filter', '-m', "'+'", '-Oz', '-e' '"QA > 4000"', '-s', "'HQ'",]
+    cmd14 += ['|', 'bcftools', 'filter', '-m', "'+'", '-Oz', '-e' '"AO/DP > 0.50"', '-s', "'GT50'",]
+    cmd14 += ['|', 'bcftools', 'filter', '-m', "'+'", '-Oz', '-e' '"AO/DP <= 0.20"', '-s', "'LT20'",]
+    cmd14 += ['>', os.path.join(outdir, 'variants.fb.vcf.gz'), ]
+    # command_runner([cmd14,], 'fix_consensus:Freebayes', debug)      
+
+    command_runner([
+        ['cp', os.path.join(tempdir, 'all.bam'), outdir,],
+        ['cp', os.path.join(tempdir, 'all.bam.bai'), outdir,],        
+        ['cp', os.path.join(tempdir, 'final.bam'), outdir,],
+        ['cp', os.path.join(tempdir, 'final.bai'), os.path.join(outdir, 'final.bam.bai')],
+    ], 'fix_consensus:cleanup', debug)
+
     if not keep_tmp:
         remove_tempdir(tempdir, 'fix_consensus')
 
-    return out_con, out_bam, out_vcf    
+    return
 """    
     
     # Copy and index initial reference
