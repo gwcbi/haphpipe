@@ -1,10 +1,10 @@
 from setuptools import setup
 
-setup(name='viralpop',
+setup(name='haphpipe',
       version='0.1',
-      description='NGS viral assembly and population genetics',
+      description='HAplotype and PHylodynamics pipeline for viral assembly, population genetics, and phylodynamics.',
       url='https://github.com/gwcbi/viralpop',
       author='Matthew L. Bendall'
       author_email='bendall@gwu.edu',
-      packages=['viralpop'],
+      packages=['haphpipe'],
       zip_safe=False)
