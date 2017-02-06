@@ -20,7 +20,7 @@ class ReferenceAlignment(object):
     gapchar = set('.-')
     unkchar = set('?')
     
-    def __init__(self, raln=None, qaln=None):
+    def __init__(self, raln=None, qaln=None, rname=None, qname=None):
         if raln is not None and qaln is not None:
             self.load_alignment(raln, qaln)
         else:
@@ -30,6 +30,8 @@ class ReferenceAlignment(object):
             self.alen = 0
             self.rstart = self.rend = 0
             self.qstart = self.qend = 0
+            self.rname = rname
+            self.qname = qname
     
     def load_alignment(self, raln, qaln):
         assert len(raln) == len(qaln), 'Error: Alignments are different lengths'
@@ -52,16 +54,18 @@ class ReferenceAlignment(object):
         # Initialize
         self._rpos_to_apos = {} # one-to-one with some apos not included
         self._qpos_to_apos = {} # one-to-one with some apos not included
-        self._apos_to_rpos = defaultdict(list)
-        self._apos_to_qpos = defaultdict(list)
+        self._apos_to_rpos = {}
+        self._apos_to_qpos = {}
         rpos = qpos = 0
         for apos in range(self.alen):
             rb, qb = self.aln_positions[apos]
             if rb is not '.':
                 self._rpos_to_apos[rpos] = apos
+                self._apos_to_rpos[apos] = rpos
                 rpos += 1
             if qb is not '.':
                 self._qpos_to_apos[qpos] = apos
+                self._apos_to_qpos[apos] = qpos
                 qpos += 1
         
         self.rstart, self.rend = 0, rpos
@@ -75,7 +79,24 @@ class ReferenceAlignment(object):
         self._rpos_to_apos = new_rpos_to_apos
         self.rstart += adj
         self.rend += adj
-        
+    
+    def convert_rpos(self, rp, left=True):
+        incr = -1 if left else 1
+        if rp < self.rstart:
+            print >>sys.stderr, "WARNING: position %d is outside reference boundaries" % rp
+            return self.qstart
+        elif rp >= self.rend:
+            print >>sys.stderr, "WARNING: position %d is outside reference boundaries" % rp
+            return self.qend
+        else:
+            ap = self._rpos_to_apos[rp]
+            while 0 <= ap <= self.alen:
+                if ap in self._apos_to_qpos:
+                    return self._apos_to_qpos[ap]
+                ap += incr
+            print >>sys.stderr, "WARNING: position %d is outside alignment" % ap
+            return None
+    
     def merge_alignments(self, other):
         newaln = ReferenceAlignment()
         
@@ -105,7 +126,7 @@ class ReferenceAlignment(object):
             for i in range(self.qstart, self.qend))
     def qaln(self):
         return ''.join(t[1] for t in self.aln_positions)
-
+    
     def imputed(self):
         ret = ''
         for i in range(self.qstart, self.qend):
@@ -118,17 +139,10 @@ class ReferenceAlignment(object):
     
     def padded(self):
         return self.qseq().upper().replace('?', '.')
-    
-    def convert_rpos(self, rpos):
-        if self.rstart <= rpos <= self.rend:
-            alntarget = self._rpos_to_apos[rpos]
-            _apos_to_qpos = {ap:qp for qp,ap in self._qpos_to_apos.iteritems()}
-            while True:
-                if alntarget in _apos_to_qpos:
-                    return alntarget[rev]
-                else:
-                    alntarget -= 1
-        return 0
+
+aln = ReferenceAlignment('at.gtacc', 'atcg..cc')
+aln.adjust_ref_start(200)
+aln.convert_rpos(200)
 
 class EmptyReferenceAlignment(ReferenceAlignment):
     def __init__(self, refseq):

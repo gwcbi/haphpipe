@@ -2,17 +2,18 @@
 
 SN="haphpipe_asm.sh"
 read -r -d '' USAGE <<EOF
-$SN
+$SN [sample_dir] [reference_fasta] <adapters_fasta>
+
 Viral genome assembly from fastq files
 
 EOF
 
 #--- Read command line args
-[[ -n "$1" ]] && [[ "$1" == '-h' ]] && echo $USAGE && exit 0
+[[ -n "$1" ]] && [[ "$1" == '-h' ]] && echo "$USAGE" && exit 0
 
 [[ -n "$1" ]] && samp="$1"
 [[ -n "$2" ]] && ref="$2"
-[[ -n "$3" ]] && adapters="$3" || adapters=""
+[[ -n "$3" ]] && adapters="$3"
 
 module unload python
 module load miniconda3
@@ -36,13 +37,16 @@ echo "[---$SN---] ($(date)) Sample:    $samp"
 echo "[---$SN---] ($(date)) Reference: $ref"
 
 #--- Check adapters if provided
-if [[ -n $adapters ]];
+if [[ -n "$adapters" ]]; then
     [[ ! -e "$adapters" ]] && echo "[---$SN---] ($(date)) FAILED: adapters $adapters does not exist" && exit 1
     echo "[---$SN---] ($(date)) Adapters:  $adapters"
     aparam="--adapter_file $adapters"
 else
+    echo "[---$SN---] ($(date)) Adapters:  $adapters"
     aparam=""
 fi
+
+echo "[---$SN---] ($(date)) Ad param:  $aparam"
 
 #--- Start the timer
 t1=$(date +"%s")
@@ -50,21 +54,32 @@ t1=$(date +"%s")
 ##########################################################################################
 # Step 1: Trim reads.
 ##########################################################################################
-echo "[---$SN---] ($(date)) Stage: trim_reads"
+stage="trim_reads"
+echo "[---$SN---] ($(date)) Stage: $stage"
 mkdir -p $samp/00_trim
 
+echo "hp_assemble trim_reads --ncpu $(nproc) \
+    $aparam \
+    --fq1 $samp/00_raw/original_1.fastq \
+    --fq2 $samp/00_raw/original_2.fastq \
+    --outdir $samp/00_trim"
+
 hp_assemble trim_reads --ncpu $(nproc) \
-    --adapter_file $aparam \
+    $aparam \
     --fq1 $samp/00_raw/original_1.fastq \
     --fq2 $samp/00_raw/original_2.fastq \
     --outdir $samp/00_trim
+
+[[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+    (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
 
 cd $samp/00_trim && ln -s trimmed_1.fastq read_1.fq && ln -s trimmed_2.fastq read_2.fq && cd ../..
 
 ##########################################################################################
 # Step 2: Join reads with FLASh.
 ##########################################################################################
-echo "[---$SN---] ($(date)) Stage: join_reads"
+stage="join_reads"
+echo "[---$SN---] ($(date)) Stage: $stage"
 mkdir -p $samp/00_flash
 
 hp_assemble join_reads --ncpu $(nproc) \
@@ -73,12 +88,16 @@ hp_assemble join_reads --ncpu $(nproc) \
     --max_overlap 150 \
     --outdir $samp/00_flash
 
+[[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+    (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+
 cd $samp/00_flash && ln -s flash.extendedFrags.fastq read_U.fq && cd ../..
 
 ##########################################################################################
 # Step 3: Error correction using BLESS2
 ##########################################################################################
-echo "[---$SN---] ($(date)) Stage: ec_reads"
+stage="ec_reads"
+echo "[---$SN---] ($(date)) Stage: $stage"
 mkdir -p $samp/00_bless
 
 # bless is not currently available in bioconda
@@ -89,6 +108,9 @@ hp_assemble ec_reads --ncpu $(nproc) \
     --fq2 $samp/00_trim/read_2.fq \
     --kmerlength 31 \
     --outdir $samp/00_bless
+
+[[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+    (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
 
 cd $samp/00_bless && ln -s bless.1.corrected.fastq read_1.fq && ln -s bless.2.corrected.fastq read_2.fq && cd ../..
 
@@ -102,38 +124,48 @@ for method in "trim" "bless" "flash"; do
     f1arg=$([[ -e $samp/00_${method}/read_1.fq ]] && echo "--fq1 $samp/00_${method}/read_1.fq" || echo "")
     f2arg=$([[ -e $samp/00_${method}/read_2.fq ]] && echo "--fq2 $samp/00_${method}/read_2.fq" || echo "")
     fUarg=$([[ -e $samp/00_${method}/read_U.fq ]] && echo "--fqU $samp/00_${method}/read_U.fq" || echo "")
-
-    echo "[---$SN---] ($(date)) Stage: assemble_denovo $method"
+    
+    stage="assemble_denovo"
+    echo "[---$SN---] ($(date)) Stage: $stage, $method"
     mkdir -p $samp/04_assembly/$method
         
     hp_assemble assemble_denovo \
         $f1arg $f2arg $fUarg \
         --ncpu $(( $(nproc) - 3 )) --max_memory 50 \
         --outdir $samp/04_assembly/$method
-
+    
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+    
 ##########################################################################################
 # Step 5: Assign contigs to subtypes
 ##########################################################################################
-    echo "[---$SN---] ($(date)) Stage: subtype"
+    stage="subtype"
+    echo "[---$SN---] ($(date)) Stage: $stage, $method"
     echo "[---$SN---] ($(date)) Skipping subtyping stage"
     # Skip this part now
 
 ##########################################################################################
 # Step 6: Scaffold contigs
 ##########################################################################################
-    echo "[---$SN---] ($(date)) Stage: assemble_scaffold $method"
+    stage="assemble_scaffold"
+    echo "[---$SN---] ($(date)) Stage: $stage, $method"
     mkdir -p $samp/06_scaffold/$method
     
     hp_assemble assemble_scaffold --keep_tmp \
             --contigs_fa $samp/04_assembly/$method/contigs.fa \
-            --ref_fa $rroot/HIV/references/subtypes/HIV_B.K03455.HXB2_LAI_IIIB_BRU.fasta \
+            --ref_fa $ref \
             --seqname $samp \
             --outdir $samp/06_scaffold/$method
+    
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
 
 ##########################################################################################
 # Step 7: Refine alignment 1
 ##########################################################################################
-    echo "[---$SN---] ($(date)) Stage: refine_alignment (1) $method"
+    stage="refine_alignment (1)"
+    echo "[---$SN---] ($(date)) Stage: $stage, $method"
     mkdir -p $samp/07_refine1/$method
     
     # Use the imputed version
@@ -146,11 +178,16 @@ for method in "trim" "bless" "flash"; do
         --min_dp 1 \
         --bt2_preset very-fast \
         --outdir $samp/07_refine1/$method
+    
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+
 
 ##########################################################################################
 # Step 8: Refine alignment 2
 ##########################################################################################
-    echo "[---$SN---] ($(date)) Stage: refine_alignment (2) $method"
+    stage="refine_alignment (2)"
+    echo "[---$SN---] ($(date)) Stage: $stage, $method"
     mkdir -p $samp/08_refine2/$method
     
     # Impute refined assembly using first assembly
@@ -168,20 +205,27 @@ for method in "trim" "bless" "flash"; do
         --min_dp 2 \
         --bt2_preset very-sensitive \
         --outdir $samp/08_refine2/$method
+    
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
 
 ##########################################################################################
 # Step 9: Fix consensus
 ##########################################################################################
-    echo "[---$SN---] ($(date)) Stage: fix_consensus $method"
+    stage="fix_consensus"
+    echo "[---$SN---] ($(date)) Stage: $stage, $method"
     mkdir -p $samp/09_fixed/$method
     
     hp_assemble fix_consensus --ncpu $(nproc) \
         $f1arg $f2arg $fUarg \
         --assembly_fa $samp/08_refine2/$method/refined.fa \
-        --ref_fa $rroot/HIV/references/subtypes/HIV_B.K03455.HXB2_LAI_IIIB_BRU.fasta \
+        --ref_fa $ref \
         --rgid $samp \
         --bt2_preset very-sensitive \
         --outdir $samp/09_fixed/$method
+    
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
 
 done
 

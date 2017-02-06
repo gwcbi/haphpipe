@@ -16,6 +16,7 @@ from stages import assemble_scaffold
 from stages import refine_assembly
 from stages import fix_consensus
 from stages import vcf_to_fasta
+from stages import post_assembly
 
 def main():
     parser = argparse.ArgumentParser()
@@ -30,6 +31,8 @@ def main():
     refine_assembly.stageparser(sub.add_parser('refine_assembly'))
     fix_consensus.stageparser(sub.add_parser('fix_consensus'))
     vcf_to_fasta.stageparser(sub.add_parser('vcf_to_fasta'))
+    
+    post_assembly.stageparser(sub.add_parser('post_assembly'))
     
     args = parser.parse_args()
     args.func(**args_params(args))
