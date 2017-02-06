@@ -8,13 +8,13 @@ import argparse
 
 from Bio import SeqIO
 
-from utils.helpers import guess_encoding
-from utils.sysutils import PipelineStepError, command_runner
-from utils.sysutils import check_dependency, existing_file, existing_dir, args_params
-from utils.sysutils import create_tempdir, remove_tempdir
-from utils.sequtils import wrap, extract_amplicons
+from ..utils.helpers import guess_encoding
+from ..utils.sysutils import PipelineStepError, command_runner
+from ..utils.sysutils import check_dependency, existing_file, existing_dir, args_params
+from ..utils.sysutils import create_tempdir, remove_tempdir
+from ..utils.sequtils import wrap, extract_amplicons
 from vcf_to_fasta import vcf_to_fasta
-from utils.alignutils import assemble_to_ref
+from ..utils.alignutils import assemble_to_ref
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"

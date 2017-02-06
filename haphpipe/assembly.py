@@ -5,6 +5,7 @@ import argparse
 
 from utils.sysutils import args_params
 
+import stages
 from stages import trim_reads
 from stages import join_reads
 from stages import ec_reads
@@ -16,8 +17,7 @@ from stages import refine_assembly
 from stages import fix_consensus
 from stages import vcf_to_fasta
 
-if __name__ == '__main__':
-    import argparse
+def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(help='Assembly stages')
     trim_reads.stageparser(sub.add_parser('trim_reads'))
@@ -33,3 +33,6 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     args.func(**args_params(args))
+
+if __name__ == '__main__':
+    main()

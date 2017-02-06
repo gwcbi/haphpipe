@@ -8,9 +8,9 @@ from collections import defaultdict
 from subprocess import Popen, PIPE
 from Bio import SeqIO
 
-from utils.sysutils import check_dependency, existing_file, existing_dir, args_params
-from utils.sequtils import wrap
-from utils.helpers import merge_interval_list
+from ..utils.sysutils import check_dependency, existing_file, existing_dir, args_params
+from ..utils.sequtils import wrap
+from ..utils.helpers import merge_interval_list
 
 
 __author__ = 'Matthew L. Bendall'

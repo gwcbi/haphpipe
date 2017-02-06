@@ -7,10 +7,10 @@ import argparse
 
 from Bio import SeqIO
 
-from utils.sysutils import check_dependency, existing_file, existing_dir, args_params
-from utils.sysutils import create_tempdir, remove_tempdir
-from utils.sequtils import clean_seqnames, wrap
-from utils.alignutils import assemble_to_ref
+from ..utils.sysutils import check_dependency, existing_file, existing_dir, args_params
+from ..utils.sysutils import create_tempdir, remove_tempdir
+from ..utils.sequtils import clean_seqnames, wrap
+from ..utils.alignutils import assemble_to_ref
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"

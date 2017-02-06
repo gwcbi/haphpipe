@@ -5,9 +5,9 @@ import sys
 import os
 import argparse
 
-from utils.helpers import guess_encoding
-from utils.sysutils import PipelineStepError, check_dependency
-from utils.sysutils import existing_file, existing_dir, command_runner, args_params
+from ..utils.helpers import guess_encoding
+from ..utils.sysutils import PipelineStepError, check_dependency
+from ..utils.sysutils import existing_file, existing_dir, command_runner, args_params
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"

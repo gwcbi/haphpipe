@@ -6,8 +6,8 @@ import os
 import argparse
 from subprocess import check_output
 
-from utils.sysutils import PipelineStepError, check_dependency
-from utils.sysutils import existing_file, existing_dir, command_runner, args_params
+from ..utils.sysutils import PipelineStepError, check_dependency
+from ..utils.sysutils import existing_file, existing_dir, command_runner, args_params
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"

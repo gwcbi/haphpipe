@@ -9,8 +9,8 @@ from collections import defaultdict
 
 from Bio import SeqIO
 
-from utils.sysutils import command_runner
-from utils import alignobj
+from sysutils import command_runner
+import alignobj
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"

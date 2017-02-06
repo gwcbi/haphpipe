@@ -7,9 +7,9 @@ import argparse
 import gzip
 import re
 
-from utils.sysutils import PipelineStepError
-from utils.sysutils import existing_file, args_params
-from utils.sequtils import wrap, get_ambig
+from ..utils.sysutils import PipelineStepError
+from ..utils.sysutils import existing_file, args_params
+from ..utils.sequtils import wrap, get_ambig
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"

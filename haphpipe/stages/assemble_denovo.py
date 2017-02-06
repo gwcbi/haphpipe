@@ -5,10 +5,10 @@ import sys
 import os
 import argparse
 
-from utils.sysutils import PipelineStepError, check_dependency
-from utils.sysutils import existing_file, existing_dir, command_runner, args_params
-from utils.sysutils import create_tempdir, remove_tempdir
-from utils.sequtils import assembly_stats
+from ..utils.sysutils import PipelineStepError, check_dependency
+from ..utils.sysutils import existing_file, existing_dir, command_runner, args_params
+from ..utils.sysutils import create_tempdir, remove_tempdir
+from ..utils.sequtils import assembly_stats
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"

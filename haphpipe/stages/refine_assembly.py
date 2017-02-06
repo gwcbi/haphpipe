@@ -6,11 +6,11 @@ import os
 import re
 import argparse
 
-from utils.helpers import guess_encoding
-from utils.sysutils import PipelineStepError, command_runner
-from utils.sysutils import check_dependency, existing_file, existing_dir, args_params
-from utils.sysutils import create_tempdir, remove_tempdir
-from utils.sequtils import wrap
+from ..utils.helpers import guess_encoding
+from ..utils.sysutils import PipelineStepError, command_runner
+from ..utils.sysutils import check_dependency, existing_file, existing_dir, args_params
+from ..utils.sysutils import create_tempdir, remove_tempdir
+from ..utils.sequtils import wrap
 from vcf_to_fasta import vcf_to_fasta
 
 __author__ = 'Matthew L. Bendall'

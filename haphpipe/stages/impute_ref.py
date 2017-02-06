@@ -7,12 +7,12 @@ import argparse
 
 from Bio import SeqIO
 
-from utils.sysutils import check_dependency, existing_file, existing_dir, args_params
-from utils.sysutils import create_tempdir, remove_tempdir
-from utils.sequtils import wrap, extract_amplicons
-from utils.alignutils import  assemble_to_ref
-from utils.alignutils import TilingRow, NucmerAlignment, EmptyAlignment
-from utils.alignutils import align_nucmer, show_aligns
+from ..utils.sysutils import check_dependency, existing_file, existing_dir, args_params
+from ..utils.sysutils import create_tempdir, remove_tempdir
+from ..utils.sequtils import wrap, extract_amplicons
+from ..utils.alignutils import  assemble_to_ref
+from ..utils.alignutils import TilingRow, NucmerAlignment, EmptyAlignment
+from ..utils.alignutils import align_nucmer, show_aligns
 
 
 __author__ = 'Matthew L. Bendall'
