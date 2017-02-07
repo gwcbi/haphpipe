@@ -94,6 +94,7 @@ def refine_assembly(fq1=None, fq2=None, fqU=None, assembly_fa=None, outdir='.',
     command_runner([cmd1,cmd2,cmd3,cmd4], 'refine_assembly:index_ref', debug)
     
     # Align with bowtie2
+    out_bt2 = os.path.join(outdir, 'bowtie2.out')    
     cmd5 = [
         'bowtie2',
         '-p', '%d' % ncpu,
@@ -111,10 +112,13 @@ def refine_assembly(fq1=None, fq2=None, fqU=None, assembly_fa=None, outdir='.',
         cmd5 += ['-1', fq1, '-2', fq2,]
     elif input_reads in ['single', 'both', ]:
         cmd5 += ['-U', fqU, ]
-    cmd5 += ['|', 'samtools', 'view', '-bS', '-', '>', os.path.join(tempdir, 'unsorted.bam'),]
-    cmd6 = ['samtools', 'sort', os.path.join(tempdir, 'unsorted.bam'), os.path.join(tempdir, 'aligned'),]
-    cmd7 = ['samtools', 'index',  os.path.join(tempdir, 'aligned.bam'),]
-    command_runner([cmd5,cmd6,cmd7,], 'refine_assembly:align', debug)
+    cmd5 += ['-S', os.path.join(tempdir, 'tmp.sam'), ]
+    cmd5 += ['2>&1', '|', 'tee', out_bt2, ]
+    cmd6a = ['samtools', 'view', '-bS', os.path.join(tempdir, 'tmp.sam'), '>', os.path.join(tempdir, 'unsorted.bam'),]
+    cmd6b = ['samtools', 'sort', os.path.join(tempdir, 'unsorted.bam'), os.path.join(tempdir, 'all'),]
+    cmd6c = ['samtools', 'index',  os.path.join(tempdir, 'all.bam'),]
+    cmd7 = ['rm', os.path.join(tempdir, 'tmp.sam'), os.path.join(tempdir, 'unsorted.bam'), ]
+    command_runner([cmd5,cmd6a,cmd6b,cmd6c,cmd7], 'refine_assembly:align', debug)
     
     # MarkDuplicates
     cmd8 = [

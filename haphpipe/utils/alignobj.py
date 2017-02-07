@@ -47,6 +47,7 @@ class ReferenceAlignment(object):
         self._index_alignment()
     
     def _index_alignment(self):
+        print >>sys.stderr, "Indexing alignment"
         if self.alen != len(self.aln_positions):
             # print >>sys.stderr, 'Warning: self.alen != len(self.aln_positions)'
             self.alen = len(self.aln_positions)
@@ -81,6 +82,8 @@ class ReferenceAlignment(object):
         self.rend += adj
     
     def convert_rpos(self, rp, left=True):
+        """ Returns position in query for given reference position
+        """
         incr = -1 if left else 1
         if rp < self.rstart:
             print >>sys.stderr, "WARNING: position %d is outside reference boundaries" % rp
@@ -102,8 +105,13 @@ class ReferenceAlignment(object):
         
         # First and last reference positions in other
         other_rs = min(other._rpos_to_apos.keys())
+        assert other_rs == other.rstart
         other_re = max(other._rpos_to_apos.keys())
-        
+        assert other_re + 1 == other.rend, "%d != %d" % (other_re, other.rend)
+        # print other_rs
+        # print other_re
+        # print self._rpos_to_apos[other_rs]
+        # print self._rpos_to_apos[other_re] + 1
         if other_rs in self._rpos_to_apos:
             left = self.aln_positions[:self._rpos_to_apos[other_rs]]
         if other_re in self._rpos_to_apos:
@@ -140,9 +148,9 @@ class ReferenceAlignment(object):
     def padded(self):
         return self.qseq().upper().replace('?', '.')
 
-aln = ReferenceAlignment('at.gtacc', 'atcg..cc')
-aln.adjust_ref_start(200)
-aln.convert_rpos(200)
+# aln = ReferenceAlignment('at.gtacc', 'atcg..cc')
+# aln.adjust_ref_start(200)
+# aln.convert_rpos(200)
 
 class EmptyReferenceAlignment(ReferenceAlignment):
     def __init__(self, refseq):
@@ -169,7 +177,13 @@ class NucmerReferenceAlignment(ReferenceAlignment):
         if outlines is not None:
             self.parse(outlines)
     
-    def parse(self, outlines):
+    def parse(self, aln_report):
+        assert re.match('^--\s+BEGIN', aln_report[0]), 'First line of alignment is not "BEGIN"'
+        assert re.match('^--\s+END', aln_report[-1]), 'Last line of alignment is not "END"'
+        m = re.search('\[([+\-\s\d]+)\|([+\-\s\d]+)\]', aln_report[0])
+        ref_frm, ref_s, z ,ref_e = m.group(1).strip().split()
+        qry_frm, qry_s, z ,qry_e = m.group(2).strip().split()
+        """
         aln_lines = []
         flag = False
         for l in outlines:
@@ -182,19 +196,17 @@ class NucmerReferenceAlignment(ReferenceAlignment):
                 flag = False
             if flag and re.match('^\d+', l):
                 aln_lines.append(l)
-        
+        """
         self.ref_frm, self.ref_s, self.ref_e = map(int, [ref_frm, ref_s, ref_e])
         self.qry_frm, self.qry_s, self.qry_e = map(int, [qry_frm, qry_s, qry_e])
-        
+        aln_lines = [l for l in aln_report if re.match('^\d+', l)]
         self.load_alignment(
             ''.join(aln_lines[i].split()[1] for i in range(0, len(aln_lines), 2)),
             ''.join(aln_lines[i].split()[1] for i in range(1, len(aln_lines), 2))
         )
         # Adjust for reference start
-        # Nucmer uses 1-based numbering, we are going to use 0-based numbering
+        # Nucmer uses 1-based numbering, we are going to use 0-based numbering     
         self.adjust_ref_start(self.ref_s - 1)
-
-
 
 class TilingRow:
     """ Alignment specification from show-tiling (mummer)

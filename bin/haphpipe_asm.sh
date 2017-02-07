@@ -202,7 +202,7 @@ for method in "trim" "bless" "flash"; do
         $f1arg $f2arg $fUarg \
         --assembly_fa $samp/08_refine2/$method/initial.fa \
         --rgid $samp \
-        --min_dp 2 \
+        --min_dp 1 \
         --bt2_preset very-sensitive \
         --outdir $samp/08_refine2/$method
     
@@ -234,3 +234,13 @@ t2=$(date +"%s")
 diff=$(($t2-$t1))
 echo "[---$SN---] ($(date)) $(($diff / 60)) minutes and $(($diff % 60)) seconds elapsed."
 echo "[---$SN---] ($(date)) $SN COMPLETE."
+
+# Check files
+for method in "trim" "bless" "flash"; do
+    [[ -e $samp/09_fixed/$method/consensus.fasta ]] && \
+    [[ -e $samp/09_fixed/$method/final.bam ]] && \
+    [[ -e $samp/09_fixed/$method/variants.ug.vcf.gz ]] && echo "[---$SN---] ($(date)) $samp $method SUCCESS" || echo "[---$SN---] ($(date)) $samp $method FAILED"
+done | tee $samp/x.log
+
+[[ $(grep -c 'FAILED' $samp/x.log)  == 0 ]] && echo "[---$SN---] ($(date)) $samp SUCCESS" || echo "[---$SN---] ($(date)) $samp FAILED"
+rm -f $samp/x.log

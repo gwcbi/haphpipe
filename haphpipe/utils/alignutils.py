@@ -83,7 +83,7 @@ def show_aligns(ref, qry, delta):
     cmd1 = ['show-aligns', '-r', delta, ref, qry]
     return check_output(cmd1)
 
-def assemble_to_ref(ref_fa, qry_fa, workdir, pad_fh=None):
+def assemble_to_ref(ref_fa, qry_fa, workdir, pad_fh=None, debug=True):
     fil, til = align_nucmer(ref_fa, qry_fa, workdir)
     tr_byref = defaultdict(list)
     for l in open(til, 'rU'):
@@ -106,11 +106,29 @@ def assemble_to_ref(ref_fa, qry_fa, workdir, pad_fh=None):
         
         for tr in ranked:
             out = show_aligns(tr.ref, tr.qry, fil)
-            nucaln = alignobj.NucmerReferenceAlignment(out.split('\n'))
-            if pad_fh is not None:
-                pad = empty.merge_alignments(nucaln)
-                print >>pad_fh, '%s%s' % (tr.qry.ljust(40), pad.padded())
-            scaffolds[ref] = scaffolds[ref].merge_alignments(nucaln)
+            # May be multiple alignments
+            flag = False
+            aln_reports = []
+            for l in out.strip('\n').split('\n'):
+                if re.match('^--\s+BEGIN', l):
+                    aln_reports.append(list())
+                    flag = True
+                if flag:
+                    aln_reports[-1].append(l)
+                if re.match('^--\s+END', l):
+                    flag = False
+            
+            for aln_report in aln_reports:
+                if debug:
+                    print >>sys.stderr, "*" * 80
+                    print >>sys.stderr, '\n'.join(aln_report)
+                    print >>sys.stderr, "*" * 80
+                nucaln = alignobj.NucmerReferenceAlignment(aln_report)
+                print '%d-%d' % (nucaln.rstart, nucaln.rend)
+                if pad_fh is not None:
+                    pad = empty.merge_alignments(nucaln)
+                    print >>pad_fh, '%s%s' % (tr.qry.ljust(40), pad.padded())
+                scaffolds[ref] = scaffolds[ref].merge_alignments(nucaln)
     
     return scaffolds
 

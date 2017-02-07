@@ -5,6 +5,7 @@ import sys
 import os
 import re
 import argparse
+import shutil
 
 from Bio import SeqIO
 
@@ -90,6 +91,7 @@ def fix_consensus(fq1=None, fq2=None, fqU=None, assembly_fa=None, ref_fa=None, o
     ret = []
     
     # Align consensus to reference
+    """
     check_dependency('nucmer')
     check_dependency('delta-filter')
     check_dependency('show-tiling')
@@ -125,6 +127,9 @@ def fix_consensus(fq1=None, fq2=None, fqU=None, assembly_fa=None, ref_fa=None, o
         for chrom in sorted(scaffolds.keys()):
             print >>outh, '>%s\n%s' % (chrom_to_ref[chrom], scaffolds[chrom].raln())
             print >>outh, '>%s\n%s' % (chrom, scaffolds[chrom].qaln())
+    """
+    # Copy assembly_fa to consensus
+    shutil.copyfile(assembly_fa, os.path.join(outdir, 'consensus.fasta'))
     
     # Copy and index consensus reference
     curref = os.path.join(tempdir, 'initial.fasta')
@@ -155,7 +160,7 @@ def fix_consensus(fq1=None, fq2=None, fqU=None, assembly_fa=None, ref_fa=None, o
     elif input_reads in ['single', 'both', ]:
         cmd5 += ['-U', fqU, ]
     cmd5 += ['-S', os.path.join(tempdir, 'tmp.sam'), ]
-    cmd5 += ['2>&1', '|', 'tee', out_bt2, ] 
+    cmd5 += ['2>&1', '|', 'tee', out_bt2, ]
     cmd6 = ['samtools', 'view', '-bS', os.path.join(tempdir, 'tmp.sam'), '>', os.path.join(tempdir, 'unsorted.bam'),]
     cmd7 = ['samtools', 'sort', os.path.join(tempdir, 'unsorted.bam'), os.path.join(tempdir, 'all'),]
     cmd8 = ['samtools', 'index',  os.path.join(tempdir, 'all.bam'),]
