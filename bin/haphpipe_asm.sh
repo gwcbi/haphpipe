@@ -73,7 +73,8 @@ hp_assemble trim_reads --ncpu $(nproc) \
 [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
     (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
 
-cd $samp/00_trim && ln -s trimmed_1.fastq read_1.fq && ln -s trimmed_2.fastq read_2.fq && cd ../..
+# Symlink to rename files
+cd $samp/00_trim && ln -fs trimmed_1.fastq read_1.fq && ln -fs trimmed_2.fastq read_2.fq && cd ../..
 
 ##########################################################################################
 # Step 2: Join reads with FLASh.
@@ -91,7 +92,7 @@ hp_assemble join_reads --ncpu $(nproc) \
 [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
     (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
 
-cd $samp/00_flash && ln -s flash.extendedFrags.fastq read_U.fq && cd ../..
+cd $samp/00_flash && ln -fs flash.extendedFrags.fastq read_U.fq && cd ../..
 
 ##########################################################################################
 # Step 3: Error correction using BLESS2
@@ -112,7 +113,7 @@ hp_assemble ec_reads --ncpu $(nproc) \
 [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
     (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
 
-cd $samp/00_bless && ln -s bless.1.corrected.fastq read_1.fq && ln -s bless.2.corrected.fastq read_2.fq && cd ../..
+cd $samp/00_bless && ln -fs bless.1.corrected.fastq read_1.fq && ln -fs bless.2.corrected.fastq read_2.fq && cd ../..
 
 ##########################################################################################
 # Step 4: Denovo assembly using Trinity
@@ -190,12 +191,7 @@ for method in "trim" "bless" "flash"; do
     echo "[---$SN---] ($(date)) Stage: $stage, $method"
     mkdir -p $samp/08_refine2/$method
     
-    # Impute refined assembly using first assembly
-    # hp_assemble impute_ref \
-    #     --assembly_fa $samp/07_refine1/$method/refined.fa \
-    #     --ref_fa $samp/07_refine1/$method/initial.fa \
-    #         > $samp/08_refine2/$method/initial.fa
-    # Or not
+    # Copy refined sequence to use for initial
     cp $samp/07_refine1/$method/refined.fa $samp/08_refine2/$method/initial.fa
     
     hp_assemble refine_assembly --ncpu $(nproc) \
@@ -203,7 +199,7 @@ for method in "trim" "bless" "flash"; do
         --assembly_fa $samp/08_refine2/$method/initial.fa \
         --rgid $samp \
         --min_dp 1 \
-        --bt2_preset very-sensitive \
+        --bt2_preset sensitive-local \
         --outdir $samp/08_refine2/$method
     
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
@@ -219,9 +215,8 @@ for method in "trim" "bless" "flash"; do
     hp_assemble fix_consensus --ncpu $(nproc) \
         $f1arg $f2arg $fUarg \
         --assembly_fa $samp/08_refine2/$method/refined.fa \
-        --ref_fa $ref \
         --rgid $samp \
-        --bt2_preset very-sensitive \
+        --bt2_preset very-sensitive-local \
         --outdir $samp/09_fixed/$method
     
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
