@@ -17,7 +17,10 @@ module unload python
 module load miniconda3
 source activate haphpipe
 
-module load PredictHaplo
+[[ -e /scratch ]] && export TMPDIR=/scratch
+
+module load PredictHaplo/0.4
+module load samtools/1.3.1
 
 echo "[---$SN---] ($(date)) Starting $SN"
 
