@@ -11,7 +11,7 @@ else
 fi
 
 [[ -z "$samp" ]] && echo "\"\$samp\" was not provided" && exit 1
-[[ -d "$samp" ]] && echo "Directory \"$samp\" was not found" && exit 1
+[[ ! -d "$samp" ]] && echo "Directory \"$samp\" was not found" && exit 1
 
 module unload python
 module load miniconda3
