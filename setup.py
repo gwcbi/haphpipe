@@ -9,6 +9,7 @@ setup(name='haphpipe',
       packages=['haphpipe'],
       scripts=[
           'bin/haphpipe_asm.sh',
+          'bin/haphpipe_predicthaplo.sh',
       ],
       entry_points={
           'console_scripts': [

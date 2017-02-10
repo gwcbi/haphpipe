@@ -65,17 +65,18 @@ config_template = '''### configuration file for the HIVhaplotyper
 '''
 
 
-DEFAULTS = { 'prefix': 'PH',
+DEFAULTS = {
+             # 'prefix': 'PH',
              'do_visualize': 1,
              'have_true_haplotypes': 0,
              'file_true_haplotypes': 'dummy.fasta',
              'do_local_analysis': 1,
              'max_reads': 10000,
              'entropy_threshold': '4e-2',
-             'reconstruction_start': 6000,
-             'reconstruction_stop': 8000,
+             # 'reconstruction_start': 6000,
+             # 'reconstruction_stop': 8000,
              'min_mapping_qual': 25,
-             'min_readlength': 10,
+             # 'min_readlength': 10,
              'max_gap_fraction': 0.05,
              'min_align_score_fraction': 0.35,
              'alpha_MN_local': 25,
@@ -102,20 +103,22 @@ def stageparser(parser):
     group2.add_argument('--max_ambig', type=int,
                         help='''Maximum size of ambiguous sequence within a reconstruction
                                 region''')
+    group2.add_argument('--min_readlength', type=int,
+                        help='''Minimum readlength passed to PredictHaplo''')
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--ncpu', type=int,
                         help='Number of CPU to use')
     group3.add_argument('--max_memory', type=int,
                         help='Maximum memory to use (in GB)')
     group3.add_argument('--keep_tmp', action='store_true',
-                        help='Additional options')
+                        help='Do not delete temporary directory')
     group3.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
     parser.set_defaults(func=predict_haplo)
 
 
 def predict_haplo(alignment=None, ref_fa=None, outdir='.',
-        min_interval=200, max_ambig=200,
+        min_interval=200, max_ambig=200, min_readlength=36,
         ncpu=1, max_memory=50, keep_tmp=False, debug=False,
     ):
     """ Assemble haplotypes with predicthaplo
@@ -135,7 +138,8 @@ def predict_haplo(alignment=None, ref_fa=None, outdir='.',
     tempdir = create_tempdir('predict_haplo')
     
     # Set up parameters        
-    params = dict(DEFAULTS)
+    ph_params = dict(DEFAULTS)
+    ph_params['min_readlength'] = min_readlength
     
     # Load reference fasta
     with open(ref_fa, 'rU') as fh:
@@ -154,7 +158,7 @@ def predict_haplo(alignment=None, ref_fa=None, outdir='.',
     # Copy reference fasta
     with open(os.path.join(tempdir, 'reference.fasta'), 'w') as outh:
         print >>outh, '>%s\n%s' % (name, seq)
-    params['ref_fasta'] = 'reference.fasta'
+    ph_params['ref_fasta'] = 'reference.fasta'
     
     # Collate or sort 
     if has_collate:
@@ -177,7 +181,7 @@ def predict_haplo(alignment=None, ref_fa=None, outdir='.',
 
     # Create the SAM file
     command_runner([cmd1a, cmd1b, cmd1c ], 'predict_haplo:setup', debug)
-    params['alignment'] = 'collated.sam'
+    ph_params['alignment'] = 'collated.sam'
     
     # Run in parallel when the number of runs is less than number of CPU
     # Since I don't want to handle queueing right now.
@@ -195,16 +199,17 @@ def predict_haplo(alignment=None, ref_fa=None, outdir='.',
         runnames.append('PH%02d' % (i+1))
         print >>sys.stderr, "Reconstruction region %s: %d - %d" % (runnames[-1], iv[0], iv[1])
         config_file = '%s.config' % runnames[-1]
-        tparams = dict(params)
-        tparams['reconstruction_start'] = iv[0]
-        tparams['reconstruction_stop'] = iv[1]
-        tparams['prefix'] = '%s.' % runnames[-1]
+        # Construct params specific for region
+        reg_params = dict(ph_params)
+        reg_params['reconstruction_start'] = iv[0]
+        reg_params['reconstruction_stop'] = iv[1]
+        reg_params['prefix'] = '%s.' % runnames[-1]
         with open(os.path.join(tempdir, config_file), 'w') as outh:
-            tmpconfig = config_template % tparams
+            tmpconfig = config_template % reg_params
             print >>outh, tmpconfig.replace('###', '%')
         
         if do_parallel:
-            print >>sys.stderr, "spawning process for %s" % runnames[-1]
+            print >>sys.stderr, "Spawning process for %s" % runnames[-1]
             processes.append((runnames[-1],
                 Popen('cd %s && PredictHaplo-Paired %s' % (tempdir, config_file),
                       shell=True, stdout=PIPE)
@@ -225,6 +230,7 @@ def predict_haplo(alignment=None, ref_fa=None, outdir='.',
     else:
         command_runner(cmds, 'predict_haplo', debug)
     
+    # Copy output files to output directory
     for rn in runnames:
         rundir = os.path.join(outdir, rn)
         if not os.path.exists(rundir):
