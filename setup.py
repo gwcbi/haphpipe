@@ -13,6 +13,7 @@ setup(name='haphpipe',
       entry_points={
           'console_scripts': [
               'hp_assemble=haphpipe.assembly:main',
+              'hp_haplotype=haphpipe.haplotype:main',
           ],
       },
       zip_safe=False,
