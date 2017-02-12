@@ -31,12 +31,20 @@ for method in "trim" "bless"; do
     echo "[---$SN---] ($(date)) Stage: PredictHaplo, $method"
     mkdir -p $samp/10_predicthaplo/${method}
     
+    [[ -e $samp/09_fixed/${method}/covered.intervals ]] \
+      && intargs="--interval_txt $samp/09_fixed/${method}/covered.intervals" \
+      || intargs="--min_depth 20"
+    
     hp_haplotype predict_haplo --ncpu $(nproc) \
         --alignment $samp/09_fixed/${method}/final.bam \
         --ref_fa $samp/09_fixed/${method}/consensus.fasta \
         --outdir $samp/10_predicthaplo/${method} \
-        --min_interval 200
+        $intargs \
+        --min_interval 200 &
 done
+
+# Wait for all processes to finsh
+wait
 
 #---Complete job
 t2=$(date +"%s")

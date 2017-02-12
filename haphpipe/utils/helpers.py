@@ -1,8 +1,10 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sysutils
 from itertools import tee, izip
+import math
+
+import sysutils
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
@@ -97,3 +99,8 @@ def pairwise(iterable):
     a, b = tee(iterable)
     next(b, None)
     return izip(a, b)
+    
+def percentile(d, p):
+    """ Returns percentile from sorted list """
+    k = (len(d)-1) * p
+    return (float(d[int(math.floor(k))] + d[int(math.ceil(k))]) / 2)
