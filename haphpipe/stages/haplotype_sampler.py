@@ -9,7 +9,7 @@ import random
 parser = argparse.ArgumentParser()
 parser.add_argument("-input", help="Fasta file from PredictHaplo. This is after PHparser.py is ran.")
 parser.add_argument("-out", help="Fasta output. Used to put the PredictHaplo sequences in FASTA format")
-parser.add_argument("-num", help="Desired number of sequences to generate")
+parser.add_argument("-num", type=int, help="Desired number of sequences to generate")
 args = parser.parse_args()
 
 
@@ -40,10 +40,15 @@ if len(seqs) == len(freqs):
     cumfreq.append(counter)
 
 if len(freqs) == len(cumfreq):
-  for n in range(int(args.num)):
+  for n in range(args.num):
     s = random.random()
     index = bisect(cumfreq, s)
     fasta.append(seqs[index])
 
-SeqIO.write(fasta, args.out, 'fasta')
-print >>sys.stderr, "FASTA file comprised of %s sequences is completed for %s." %(args.num, args.input)
+if len(fasta) == args.num:
+  fafile = open(args.out, 'w')
+  for i,seq in enumerate(fasta):
+    print >>fafile, '>%s.%05d %s' % (seq.description.split()[0], i, seq.description.split()[1])
+    print >>fafile, '%s' % str(seq.seq)
+
+  print >>sys.stderr, "FASTA file comprised of %s sequences is completed for %s." %(args.num, args.input)
