@@ -88,3 +88,4 @@ ENV/
 # Rope project settings
 .ropeproject
 *.bak
+.DS_Store
