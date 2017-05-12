@@ -169,16 +169,17 @@ for method in "trim" "bless" "flash"; do
     echo "[---$SN---] ($(date)) Stage: $stage, $method"
     mkdir -p $samp/07_refine1/$method
     
-    # Use the imputed version
-    cp $samp/06_scaffold/$method/imputed.fa $samp/07_refine1/$method/initial.fa
+    # Use the scaffold
+    cp $samp/06_scaffold/$method/scaffold.fa $samp/07_refine1/$method/initial.fa
     
-    hp_assemble refine_assembly --ncpu $(nproc) \
+    hp_assemble refine_assembly --ncpu 4 \
         $f1arg $f2arg $fUarg \
         --assembly_fa $samp/07_refine1/$method/initial.fa \
         --rgid $samp \
         --min_dp 1 \
-        --bt2_preset very-fast \
-        --outdir $samp/07_refine1/$method
+        --bt2_preset fast-local \
+        --outdir $samp/07_refine1/local \
+        --keep_tmp
     
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )

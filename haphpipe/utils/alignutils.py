@@ -83,6 +83,19 @@ def show_aligns(ref, qry, delta):
     cmd1 = ['show-aligns', '-r', delta, ref, qry]
     return check_output(cmd1)
 
+def parse_show_aligns(out):
+    """ Returns show_aligns """
+    flag = False
+    cur_report = None
+    for l in out.strip('\n').split('\n'):
+        if re.match('^--\s+BEGIN', l):
+            cur_report = []
+        if cur_report is not None:
+            cur_report.append(l)
+        if re.match('^--\s+END', l):
+            yield alignobj.NucmerReferenceAlignment(cur_report)
+            cur_report = None
+
 def assemble_to_ref(ref_fa, qry_fa, workdir, pad_fh=None, debug=True):
     fil, til = align_nucmer(ref_fa, qry_fa, workdir)
     tr_byref = defaultdict(list)

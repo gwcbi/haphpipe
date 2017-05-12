@@ -59,7 +59,7 @@ def assemble_scaffold(contigs_fa=None, ref_fa=None, outdir='.',
     tmp_contigs_fa = os.path.join(tempdir, 'query.fna')
     with open(tmp_contigs_fa, 'w') as outh:
         for n,s in clean_seqnames(open(contigs_fa, 'rU')):
-            print >>outh, '>%s\t%s' % (n, wrap(s))
+            print >>outh, '>%s\n%s' % (n, wrap(s))
     
     with open(os.path.join(outdir, 'padded.out'), 'w') as pad_fh:
         scaffolds = assemble_to_ref(ref_fa, tmp_contigs_fa, tempdir, pad_fh=pad_fh)

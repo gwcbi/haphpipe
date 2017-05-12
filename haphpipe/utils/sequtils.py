@@ -86,4 +86,54 @@ AMBIG_MAP = {'AC': 'M',
              }
 
 def get_ambig(bases):
-    return AMBIG_MAP[''.join(sorted(set(bases)))]             
+    return AMBIG_MAP[''.join(sorted(set(bases)))]
+
+def region_to_tuple(regstr):
+    chrom = regstr.split(':')[0]
+    reg_s, reg_e = map(int, regstr.split(':')[1].split('-'))
+    return chrom, reg_s, reg_e
+
+def parse_seq_id(s, delim='|'):
+    f = s.split(delim)
+    return {f[i]:f[i+1] for i in range(0, len(f), 2)}
+
+"""
+class BedLine(object):
+    BEDFIELDS = [
+        ('chrom', str),
+        ('chromStart', int),
+        ('chromEnd', int),
+        ('name', str),
+        ('score', lambda x: None if x=='.' else float(x)),
+        ('strand', str),
+        ('thickStart', int),
+        ('thickEnd', int),
+        ('itemRgb', lambda x: tuple(map(int, x.split(',')))),
+        ('blockCount', int),
+        ('blockSizes', lambda x: map(int, x.split(','))),
+        ('blockStarts', lambda x: map(int, x.split(','))),
+    ]
+    
+    def __init__(self, l):
+        for v, (n, f) in zip(l, self.BEDFIELDS[:len(l)]):
+            setattr(self, n, f(v))
+    
+    def __str__(self):
+        ret = []
+        for n,f in self.BEDFIELDS:
+           if hasattr(self, n):
+               v = getattr(self, n)
+               if v is None:
+                   ret.append('.')
+               elif type(v) is list or type(v) is tuple:
+                   ret.append(','.join(str(_) for _ in v))
+               else:
+                   ret.append(str(v))
+        return '\t'.join(ret)
+        
+def bed_parser(infile):
+    fh = open(infile, 'rU') if type(infile) is str else infile
+    bedlines = (l.strip('\n').split('\t') for l in fh)
+    for bl in bedlines:
+        yield BedLine(bl)
+"""

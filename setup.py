@@ -10,6 +10,7 @@ setup(name='haphpipe',
       scripts=[
           'bin/haphpipe_asm.sh',
           'bin/haphpipe_predicthaplo.sh',
+          'bin/haphpipe_amp.sh',
       ],
       entry_points={
           'console_scripts': [

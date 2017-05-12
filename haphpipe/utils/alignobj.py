@@ -47,7 +47,7 @@ class ReferenceAlignment(object):
         self._index_alignment()
     
     def _index_alignment(self):
-        print >>sys.stderr, "Indexing alignment"
+        # print >>sys.stderr, "Indexing alignment"
         if self.alen != len(self.aln_positions):
             # print >>sys.stderr, 'Warning: self.alen != len(self.aln_positions)'
             self.alen = len(self.aln_positions)
@@ -147,6 +147,24 @@ class ReferenceAlignment(object):
     
     def padded(self):
         return self.qseq().upper().replace('?', '.')
+    
+    def scaffold2(self, collapse=True):
+        for aln_s in range(len(self.aln_positions)):
+            if self.aln_positions[aln_s][1] != '?':
+                break
+        for aln_e in range(len(self.aln_positions)-1, 0, -1):
+            if self.aln_positions[aln_e][1] != '?':
+                break
+        
+        ref_s = self._apos_to_rpos[aln_s]
+        ref_e = self._apos_to_rpos[aln_e]
+        
+        # Extract the scaffold string
+        ret = self.qseq().upper()
+        ret = ret.strip('?')
+        if collapse:
+            ret = re.sub('[\?\.\-]', '', ret)
+        return ret, ref_s, ref_e
 
 # aln = ReferenceAlignment('at.gtacc', 'atcg..cc')
 # aln.adjust_ref_start(200)

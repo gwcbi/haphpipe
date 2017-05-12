@@ -9,6 +9,8 @@ parser.add_argument("-input", help="input file from PredictHaplo")
 parser.add_argument("-sum", help="first output. Used to put the PredictHaplo Summary")
 parser.add_argument("-fa", help="second output. Used to put the PredictHaplo sequences in FASTA format")
 parser.add_argument("-pre", help="prefix to add to fasta names")
+parser.add_argument("--keep_gaps", action='store_true', help="Do not remove gaps from alignment")
+
 args = parser.parse_args()
 
 
@@ -65,8 +67,11 @@ if len(fasta) == num_hap:
 
   for sub_list in fasta:
     print >>fafile, '>%s_%s Freq=%s' %(args.pre, sub_list[0], sub_list[1])
-    print >>fafile, "%s" %(sub_list[2].replace('-', ""))
-    
+    if args.keep_gaps:
+        print >>fafile, "%s" %(sub_list[2])
+    else:
+        print >>fafile, "%s" %(sub_list[2].replace('-', ""))
+  
   print >>sys.stderr, "Summary and FASTA file completed for %s." %args.input
 
 
