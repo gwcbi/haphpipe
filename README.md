@@ -10,6 +10,8 @@ conda install biopython bowtie2 flash freebayes mummer picard samtools trimmomat
 conda install gatk
 # # # 
 gatk-register GenomeAnalysisTK-3.7.tar.bz2
+
+pip install git+git://github.com/gwcbi/haphpipe.git
 ```
 
 
