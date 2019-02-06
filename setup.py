@@ -1,12 +1,12 @@
-from setuptools import setup
+import setuptools
 
-setup(name='haphpipe',
+setuptools.setup(name='haphpipe',
       version='0.1',
       description='HAplotype and PHylodynamics pipeline for viral assembly, population genetics, and phylodynamics.',
       url='https://github.com/gwcbi/haphpipe',
       author='Matthew L. Bendall',
       author_email='bendall@gwu.edu',
-      packages=['haphpipe'],
+      packages=setuptools.find_packages(),
       scripts=[
           'bin/haphpipe_asm.sh',
           'bin/haphpipe_predicthaplo.sh',
