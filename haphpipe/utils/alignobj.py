@@ -1,13 +1,13 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import sys
 import re
 from collections import defaultdict
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
-
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
+'''
 class ReferenceAlignment(object):
     """
         Examples:
@@ -86,10 +86,10 @@ class ReferenceAlignment(object):
         """
         incr = -1 if left else 1
         if rp < self.rstart:
-            print >>sys.stderr, "WARNING: position %d is outside reference boundaries" % rp
+            print("WARNING: position %d is outside reference boundaries" % rp, file=sys.stderr)
             return self.qstart
         elif rp >= self.rend:
-            print >>sys.stderr, "WARNING: position %d is outside reference boundaries" % rp
+            print("WARNING: position %d is outside reference boundaries" % rp, file=sys.stderr)
             return self.qend
         else:
             ap = self._rpos_to_apos[rp]
@@ -97,7 +97,7 @@ class ReferenceAlignment(object):
                 if ap in self._apos_to_qpos:
                     return self._apos_to_qpos[ap]
                 ap += incr
-            print >>sys.stderr, "WARNING: position %d is outside alignment" % ap
+            print("WARNING: position %d is outside alignment" % ap, file=sys.stderr)
             return None
     
     def merge_alignments(self, other):
@@ -247,3 +247,4 @@ class TilingRow:
                                    self.ref_cov, self.qry_cov,
                                    self.ref, self.qry]))
 
+'''

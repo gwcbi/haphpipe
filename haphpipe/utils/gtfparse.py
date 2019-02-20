@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """Utilities for working with GTF files
 """
+from __future__ import print_function
 import re
 import sys
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def cast_str(s, dtypes=[int, float, str,]):
     for at in dtypes:
@@ -36,7 +37,7 @@ class GTFRow(object):
                 try:
                     setattr(self, n, f(val))
                 except ValueError:
-                    print >>sys.stderr, 'WARNING: Did not convert "%s" to %s (%s).' % (val, n, f)
+                    print('WARNING: Did not convert "%s" to %s (%s).' % (val, n, f), file=sys.stderr)
                     setattr(self, n, str(val))
             
             self.attrs = {}

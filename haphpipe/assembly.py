@@ -1,35 +1,30 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 import argparse
 
-from utils.sysutils import args_params
+from haphpipe.utils.sysutils import args_params
 
-import stages
-from stages import trim_reads
-from stages import join_reads
-from stages import ec_reads
-from stages import assemble_denovo
-# from stages import assign_contigs
-from stages import assemble_scaffold
-from stages import assemble_amplicons
-# from stages import impute_ref
-from stages import align_reads
-from stages import call_variants
-from stages import refine_assembly
-from stages import fix_consensus
-from stages import pairwise_align
-from stages import vcf_to_fasta
-from stages import post_assembly
-from stages import extract_pairwise
-from stages import annotate_from_ref
+from haphpipe.stages import assemble_denovo
+from haphpipe.stages import assemble_scaffold
+from haphpipe.stages import assemble_amplicons
+from haphpipe.stages import align_reads
+from haphpipe.stages import call_variants
+from haphpipe.stages import refine_assembly
+from haphpipe.stages import fix_consensus
+from haphpipe.stages import pairwise_align
+from haphpipe.stages import vcf_to_fasta
+from haphpipe.stages import post_assembly
+from haphpipe.stages import extract_pairwise
+from haphpipe.stages import annotate_from_ref
+
+__author__ = 'Matthew L. Bendall'
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(help='Assembly stages')
-    trim_reads.stageparser(sub.add_parser('trim_reads'))
-    join_reads.stageparser(sub.add_parser('join_reads'))    
-    ec_reads.stageparser(sub.add_parser('ec_reads'))
     assemble_denovo.stageparser(sub.add_parser('assemble_denovo'))
     # assign_contigs.stageparser(sub.add_parser('assign_contigs'))
     assemble_scaffold.stageparser(sub.add_parser('assemble_scaffold'))

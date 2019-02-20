@@ -90,3 +90,6 @@ ENV/
 *.bak
 .DS_Store
 .idea
+
+# GATK jar files
+GenomeAnalysisTK*

@@ -1,5 +1,7 @@
-#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import os
 import json
@@ -10,7 +12,10 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio import pairwise2
 
-from helpers import overlaps
+from .helpers import overlaps
+
+__author__ = 'Matthew L. Bendall'
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 class BlastxAlignment(object):
     def __init__(self, ref, query, cdspos, workdir="."):
@@ -28,12 +33,12 @@ class BlastxAlignment(object):
         qfile = os.path.join(workdir, 'tmp.fna')
         
         with open(sfile, 'w') as outh:
-            print >>outh, '>subject'
-            print >>outh, str(self.ref[self.cds_s:self.cds_e].translate())
+            print('>subject', file=outh)
+            print(str(self.ref[self.cds_s:self.cds_e].translate()), file=outh)
         
         with open(qfile, 'w') as outh:
-            print >>outh, '>query'
-            print >>outh, str(self.query)
+            print('>query', file=outh)
+            print(str(self.query), file=outh)
         
         if showaln:
             p0 = Popen(['blastx',
@@ -41,7 +46,7 @@ class BlastxAlignment(object):
                         '-subject', sfile,
                        ], stdout=PIPE, stderr=PIPE)
             o,e = p0.communicate()
-            print >>sys.stdout, o
+            print(o, file=sys.stdout)
         
         p = Popen(['blastx',
                    '-query', qfile,
@@ -148,7 +153,7 @@ def nuc_align_insert(merged, mr, refseq, qryseq):
     qry_s, qry_e = merged[mr-1][3]+1, merged[mr][3]-1
     alns = pairwise2.align.globalms(refseq[ref_s:ref_e+1], qryseq[qry_s:qry_e+1], 2, -1, -10, -1)
     best = alns[0]
-    print >>sys.stdout, pairwise2.format_alignment(*best)
+    print(pairwise2.format_alignment(*best), file=sys.stdout)
     insert = aligned_seqs_to_list(best[0], best[1], ref_s, qry_s)
     return insert
 
@@ -163,7 +168,7 @@ def nuc_align_head(merged, refseq, qryseq):
     ref_s = ref_e - (qry_e - qry_s)
     alns = pairwise2.align.globalms(refseq[ref_s:ref_e], qryseq[qry_s:qry_e], 2, -1, -10, -1)
     best = alns[0]
-    print >>sys.stdout, pairwise2.format_alignment(*best)
+    print(pairwise2.format_alignment(*best), file=sys.stdout)
     head = aligned_seqs_to_list(best[0], best[1], ref_s, qry_s)
     # Trim off query gaps at the end
     while head[0][2] == '-':
@@ -181,7 +186,7 @@ def nuc_align_tail(merged, refseq, qryseq):
     ref_e = ref_s + (qry_e - qry_s)
     alns = pairwise2.align.globalms(refseq[ref_s:ref_e+1], qryseq[qry_s:qry_e+1], 2, -1, -10, -1)
     best = alns[0]
-    print >>sys.stdout, pairwise2.format_alignment(*best)
+    print(pairwise2.format_alignment(*best), file=sys.stdout)
     tail = aligned_seqs_to_list(best[0], best[1], ref_s, qry_s)
     # Trim off query gaps at the end
     while tail[-1][2] == '-':
@@ -309,6 +314,6 @@ def alignAA(refrec, qryrec, cds, altcds=list(), workdir="."):
     merged = merged + t
     
     if validate_alignment(merged, ref, qry):
-        print >>sys.stderr, "Alignment validation passed"
+        print("Alignment validation passed", file=sys.stderr)
     
     return bxa, merged

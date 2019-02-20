@@ -1,13 +1,13 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 from itertools import tee, izip
 import math
 
-import sysutils
+from . import sysutils
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def merge_interval_list(ivs, dist=1):
     """ Merge intervals

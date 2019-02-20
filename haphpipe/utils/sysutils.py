@@ -1,75 +1,122 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import sys
 import os
 import gzip
 import shutil
 import tempfile
 import argparse
-from subprocess import check_output, check_call, Popen, STDOUT, PIPE
-from subprocess import CalledProcessError
+import subprocess
+
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
+
 
 class PipelineStepError(Exception):
     pass
 
-"""
-def run_command(cmd, out_fn):
-    with open(out_fn, 'w') as outh:
-        p = Popen(cmd, stderr=PIPE, stdout=outh)
-        ret = p.communicate()
-    if ret[1]: print >>sys.stderr, ret[1]
-    if p.returncode != 0:
-        sys.exit('Command %s failed with exit code %d' % (cmd[0], p.returncode))
-    return
-"""
+
+class ArgumentDefaultsHelpFormatterSkipNone(argparse.HelpFormatter):
+    """Help message formatter which adds default values to argument help.
+
+    Only the name of this class is considered a public API. All the methods
+    provided by the class are considered an implementation detail.
+
+    Modified from argparse.HelpFormatter to skip default when it is "None"
+
+    """
+    def _get_help_string(self, action):
+        help = action.help
+        if '%(default)' not in action.help:
+            if action.default is not argparse.SUPPRESS:
+                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+                if action.option_strings or action.nargs in defaulting_nargs:
+                    if action.default is not None:
+                        help += ' (default: %(default)s)'
+        return help
+
 
 def check_dependency(prog):
     """ Check whether shell command can be called
     """
     try:
-        _ = check_output('which %s' % prog, stderr=STDOUT, shell=True)
-    except CalledProcessError:
+        _ = subprocess.check_output('which %s' % prog, stderr=subprocess.STDOUT, shell=True)
+    except subprocess.CalledProcessError:
         raise PipelineStepError('Dependency "%s" not found.' % prog)
 
-def command_runner(cmds, stage=None, debug=False):
-    """ Run a list of commands
-    """
+
+def determine_dependency_path(choices):
+    messages = ['Dependencies not found: ']
+    for prog in choices:
+        try:
+            check_dependency(prog)
+            return prog
+        except PipelineStepError as e:
+            messages.append(str(e))
+    raise PipelineStepError('\n'.join(messages))
+
+
+def log_message(msg, quiet, logfile):
+    if not quiet:
+        sys.stderr.write(msg)
+    if logfile is not None:
+        logfile.write(msg)
+
+
+def pretty_print_commands(cmds, stage, out_fh=sys.stderr):
     # Formatted print of each command
     for i,args in enumerate(cmds):
-        print >>sys.stderr, '\n[--- %s command %d ---]' % (stage, (i+1))
-        s = '%s' % args[0]
-        prev = 'init'
-        for a in args[1:]:
-            if a.startswith('-'):
-                s += '\n    %s' % a
-                prev = 'opt'
-            elif a in ['>', '>>', '2>', '&>', '|', ]:
-                s += '\n        %s' % a
-                prev = 'redir'
-            else:
-                if prev == 'opt':
-                    s += ' %s' % a
-                elif prev == 'redir':
-                    s += ' %s' % a
+            print('\n[--- %s command %d ---]' % (stage, (i+1)), file=out_fh)
+            s = '%s' % args[0]
+            prev = 'init'
+            for a in args[1:]:
+                if a.startswith('-'):
+                    s += ' \\\n    %s' % a
+                    prev = 'opt'
+                elif a in ['>', '>>', '2>', '&>', '|', ]:
+                    s += ' \\\n        %s' % a
+                    prev = 'redir'
                 else:
-                    s += '\n    %s' % a
-                prev = 'val'
-        print >>sys.stderr, s
+                    if prev == 'opt':
+                        s += ' %s' % a
+                    elif prev == 'redir':
+                        s += ' %s' % a
+                    else:
+                        s += ' \\\n    %s' % a
+                    prev = 'val'
+            print(s, file=out_fh)
+
+
+def command_runner(cmds, stage=None, quiet=False, logfile=None, debug=False):
+    """ Run a list of commands
+    """
     # Join each command with whitespace and join commands with "&&"
     cmdstr = ' && '.join(' '.join(c) for c in cmds)
-    
+
     if debug:
         # Print the joined command
-        print >>sys.stderr, '\n[--- %s commands ---]' % stage
-        print >>sys.stderr, cmdstr
-        print >>sys.stderr, '\n[--- %s ---]' % stage        
-    else:
-        # Call using subprocess
-        p = check_call(cmdstr, shell=True)
+        print('\n[--- %s commands ---]' % stage, file=sys.stderr)
+        print(cmdstr, file=sys.stderr)
+        print('\n[--- %s ---]' % stage, file=sys.stderr)
+        return
+
+    if not quiet:
+        pretty_print_commands(cmds, stage, sys.stderr)
+
+    if logfile is not None:
+        pretty_print_commands(cmds, stage, logfile)
+
+    p = subprocess.Popen(
+        cmdstr, shell=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+    for line in p.stdout:
+        log_message(line, quiet, logfile)
+    p.wait()
+    return
+
 
 """
 Helpers for parsing command-line arguments
@@ -109,10 +156,10 @@ def command_runner_stdout(cmd, out_fn):
     return
 """
 
-def create_tempdir(step='pipeline_step', basedir=None, quiet=False):
+
+def create_tempdir(step='HPstep', basedir=None, quiet=False, logfile=None):
     """ Creates temporary directory
     """
-    import tempfile
     checkdirs = ['/tmp', '/scratch', '/Temp']
     # Temporary directory
     if basedir is None:
@@ -127,17 +174,18 @@ def create_tempdir(step='pipeline_step', basedir=None, quiet=False):
     if not basedir or not os.path.isdir(basedir):
         raise PipelineStepError("Could not identify temporary directory")
     
-    curdir = tempfile.mkdtemp(prefix='tmp_%s' % step, dir=basedir)
-    if not quiet:
-        print >>sys.stderr, '\n[--- %s ---] Using temporary directory %s' % (step, curdir)
+    curdir = tempfile.mkdtemp(prefix='tmpHP_%s' % step, dir=basedir)
+    msg = '\n[--- %s ---] Using temporary directory %s\n' % (step, curdir)
+    log_message(msg, quiet, logfile)
     return curdir
 
-def remove_tempdir(d, step='pipeline_step', quiet=False):
+
+def remove_tempdir(d, step='HPstep', quiet=False, logfile=None):
     """ Removes temporary directory
     """
     if os.path.isdir(d):
-        if not quiet:
-            print >>sys.stderr, '\n[--- %s ---] Removing temporary directory %s' % (step, d)
+        msg = '\n[--- %s ---] Removing temporary directory %s\n' % (step, d)
+        log_message(msg, quiet, logfile)
         shutil.rmtree(d)
 
 
@@ -151,3 +199,15 @@ def get_filehandle(fh):
             return open(fh, 'rU')
     else:
         return fh
+
+
+def get_java_heap_size():
+    """ Determine a reasonable JVM heap size for this system
+
+     Have not yet implemented the logic here. Just returns 32
+
+    Returns:
+        heap_size (int): Heap size in GB
+
+    """
+    return 32

@@ -1,14 +1,43 @@
 # -*- coding: utf-8 -*-
 """Utilities for working with seqeunces or sets of sequences
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import sys
 import re
 
-from helpers import merge_interval_list
+from .helpers import merge_interval_list
+
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
+
+
+class HPSeq(object):
+    def __init__(self, name, seq):
+        self.id = name
+        self.seq = seq
+
+    def __len__(self):
+        return len(self.seq)
+
+
+class HPSeqIO(object):
+    @staticmethod
+    def parse(filename, format):
+        assert format == 'fasta'
+        with open(filename, 'rU') as fh:
+            for n,s in fastagen(fh):
+                yield HPSeq(n,s)
+
+    @staticmethod
+    def read(filename, format):
+        assert format == 'fasta'
+        with open(filename, 'rU') as fh:
+            n, s = list(fastagen(fh))[0]
+            return HPSeq(n, s)
+
 
 def fastagen(fh):
     lines = (l.strip() for l in fh)
@@ -39,15 +68,15 @@ def N50(l):
 
 def assembly_stats(fh, outh=sys.stdout):
     contig_lengths = sorted(len(s) for n,s in fastagen(fh))
-    print >>outh, 'num_contigs\t%d' % len(contig_lengths)
-    print >>outh, 'max_contig\t%d' % contig_lengths[-1]
-    print >>outh, 'contig>1kb\t%d' % sum(l>=1000 for l in contig_lengths)
+    print('num_contigs\t%d' % len(contig_lengths), file=outh)
+    print('max_contig\t%d' % contig_lengths[-1], file=outh)
+    print('contig>1kb\t%d' % sum(l>=1000 for l in contig_lengths), file=outh)
     l50,n50 = N50(contig_lengths)
-    print >>outh, 'contig_N50\t%d' % n50
-    print >>outh, 'contig_L50\t%d' % l50
+    print('contig_N50\t%d' % n50, file=outh)
+    print('contig_L50\t%d' % l50, file=outh)
     contig_lengths.sort(reverse=True)
     for i,l in enumerate(contig_lengths[1:5]):
-        print >>outh, 'rank%d\t%d' % (i+2, l)
+        print('rank%d\t%d' % (i+2, l), file=outh)
 
 def unambig_intervals(s, maxgap=30):
     """ Return unambiguous intervals of a sequence string
