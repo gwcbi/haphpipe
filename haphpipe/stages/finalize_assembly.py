@@ -61,11 +61,11 @@ def stageparser(parser):
                         help='Append console output to this file')
     group3.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
-    parser.set_defaults(func=fix_consensus)
+    parser.set_defaults(func=finalize_assembly)
 
 
-def fix_consensus(fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
-        bt2_preset='very-sensitive', min_dp=1, rgid='sample01',
+def finalize_assembly(fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
+        bt2_preset='very-sensitive', sample_id='sample01',
         ncpu=1,
         keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
@@ -79,13 +79,13 @@ def fix_consensus(fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
 
     # Temporary directory
     tempdir = sysutils.create_tempdir(
-        'finalize_consensus', None, quiet, logfile
+        'finalize_assembly', None, quiet, logfile
     )
 
     # Align to reference
     tmp_aligned, tmp_bt2 = align_reads.align_reads(
         fq1=fq1, fq2=fq2, fqU=fqU, ref_fa=ref_fa, outdir=tempdir,
-        bt2_preset=bt2_preset,
+        bt2_preset=bt2_preset, rgid=sample_id,
         ncpu=ncpu,
         keep_tmp=keep_tmp, quiet=quiet, logfile=logfile, debug=debug,
     )

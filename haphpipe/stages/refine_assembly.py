@@ -53,6 +53,8 @@ def stageparser(parser):
     group2.add_argument('--seed', type=int,
                         help='''Seed for random number generator (ignored if
                                 not subsampling).''')
+    group2.add_argument('--sample_id', default='sample01',
+                        help='Sample ID. Used as read group ID in BAM')
 
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--ncpu', type=int, default=1,
@@ -72,41 +74,18 @@ def stageparser(parser):
 
 
 def refine_assembly(**kwargs):
-    """
-
-    Args:
-        **kwargs:
-
-    Returns:
-
-    """
-    #     fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
-    #     max_step=1, subsample=None,
-    #     ncpu=1, xmx=None, keep_tmp=False,
-    #     quiet=False, logfile=None, debug=False,
-    #):
     max_step = kwargs.pop('max_step')
     if max_step == 1:
         kwargs['iteration'] = None
         return refine_assembly_step(**kwargs)
-        #     fq1=fq1, fq2=fq2, fqU=fqU, ref_fa=ref_fa, outdir=outdir,
-        #     iteration=None, subsample=subsample,
-        #    ncpu=ncpu, xmx=xmx, keep_tmp=keep_tmp,
-        #    quiet=quiet, logfile=logfile, debug=debug
-        #)
     else:
         kwargs['max_step'] = max_step
         return progressive_refine_assembly(**kwargs)
-        #    fq1=fq1, fq2=fq2, fqU=fqU, ref_fa=ref_fa, outdir=outdir,
-        #    max_step=max_step, subsample=subsample,
-        #    ncpu=ncpu, keep_tmp=keep_tmp,
-        #    quiet=quiet, logfile=logfile, debug=debug
-        #)
 
 
 def refine_assembly_step(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
-        iteration=None, subsample=None, seed=None,
+        iteration=None, subsample=None, seed=None, sample_id='sample01',
         ncpu=1, keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
     # Temporary directory
@@ -124,7 +103,7 @@ def refine_assembly_step(
     # Align to reference
     tmp_aligned, tmp_bt2 = align_reads.align_reads(
         fq1=fq1, fq2=fq2, fqU=fqU, ref_fa=ref_fa, outdir=tempdir,
-        ncpu=ncpu,
+        ncpu=ncpu, sample_id=sample_id,
         keep_tmp=keep_tmp, quiet=quiet, logfile=logfile, debug=debug,
     )
 

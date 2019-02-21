@@ -31,7 +31,7 @@ setuptools.setup(name='haphpipe',
               'hp_call_variants=haphpipe.stages.call_variants:console',
               'hp_vcf_to_consensus=haphpipe.stages.vcf_to_consensus:console',
               'hp_refine_assembly=haphpipe.stages.refine_assembly:console',
-              'hp_finalize_consensus=haphpipe.stages.finalize_consensus:console'
+              'hp_finalize_assembly=haphpipe.stages.finalize_assembly:console'
           ],
       },
       zip_safe=False,
