@@ -69,13 +69,18 @@ def fix_consensus(fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
         ncpu=1,
         keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
-    """ Pipeline step to fix consensus
+    """ Pipeline step to finalize consensus
     """
     # Outputs
     out_ref = os.path.join(outdir, 'final.fasta')
     out_aligned = os.path.join(outdir, 'final.bam')
     out_bt2 = os.path.join(outdir, 'final.bt2.out')
     out_vcf = os.path.join(outdir, 'final.vcf.gz')
+
+    # Temporary directory
+    tempdir = sysutils.create_tempdir(
+        'finalize_consensus', None, quiet, logfile
+    )
 
     # Align to reference
     tmp_aligned, tmp_bt2 = align_reads.align_reads(

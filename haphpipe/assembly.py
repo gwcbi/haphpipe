@@ -14,7 +14,7 @@ from haphpipe.stages import align_reads
 from haphpipe.stages import call_variants
 from haphpipe.stages import vcf_to_consensus
 from haphpipe.stages import refine_assembly
-from haphpipe.stages import fix_consensus
+from haphpipe.stages import finalize_consensus
 
 # from haphpipe.stages import pairwise_align
 # from haphpipe.stages import post_assembly
@@ -46,7 +46,7 @@ def main():
     call_variants.stageparser(sub.add_parser('call_variants'))
     vcf_to_consensus.stageparser(sub.add_parser('vcf_to_consensus'))
     refine_assembly.stageparser(sub.add_parser('refine_assembly'))
-    fix_consensus.stageparser(sub.add_parser('fix_consensus'))
+    finalize_consensus.stageparser(sub.add_parser('finalize_consensus'))
 
     # pairwise_align.stageparser(sub.add_parser('pairwise_align'))
     # post_assembly.stageparser(sub.add_parser('post_assembly'))
