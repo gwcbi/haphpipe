@@ -12,7 +12,7 @@ from haphpipe.stages import assemble_scaffold
 
 from haphpipe.stages import align_reads
 from haphpipe.stages import call_variants
-from haphpipe.stages import vcf_to_fasta
+from haphpipe.stages import vcf_to_consensus
 from haphpipe.stages import refine_assembly
 
 # from haphpipe.stages import fix_consensus
@@ -44,7 +44,7 @@ def main():
     # Reference-based
     align_reads.stageparser(sub.add_parser('align_reads'))
     call_variants.stageparser(sub.add_parser('call_variants'))
-    vcf_to_fasta.stageparser(sub.add_parser('vcf_to_fasta'))
+    vcf_to_consensus.stageparser(sub.add_parser('vcf_to_consensus'))
     refine_assembly.stageparser(sub.add_parser('refine_assembly'))
 
     # pairwise_align.stageparser(sub.add_parser('pairwise_align'))

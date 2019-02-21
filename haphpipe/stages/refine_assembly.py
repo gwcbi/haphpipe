@@ -17,7 +17,7 @@ from Bio import pairwise2
 from haphpipe.utils import sysutils
 from haphpipe.stages import align_reads
 from haphpipe.stages import call_variants
-from haphpipe.stages import vcf_to_fasta
+from haphpipe.stages import vcf_to_consensus
 from haphpipe.stages import sample_reads
 
 
@@ -138,7 +138,7 @@ def refine_assembly_step(
         quiet=quiet, logfile=logfile, debug=debug,
     )
 
-    tmp_fasta = vcf_to_fasta.vcf_to_fasta(
+    tmp_fasta = vcf_to_consensus.vcf_to_consensus(
         vcf=tmp_vcf, outdir=tempdir, sampidx=0,
         keep_tmp=keep_tmp,
         quiet=quiet, logfile=logfile

@@ -91,15 +91,15 @@ def stageparser(parser):
     # group3.add_argument('--debug', action='store_true',
     #                    help='Print commands but do not run')
 
-    parser.set_defaults(func=vcf_to_fasta)
+    parser.set_defaults(func=vcf_to_consensus)
 
 
-def vcf_to_fasta(
+def vcf_to_consensus(
         vcf=None, outdir='.',
         sampidx=0, min_dp=1, major=0.5, minor=0.2,
         keep_tmp=False, quiet=False, logfile=None,
     ):
-    """ Pipeline step to create updated FASTA from VCF
+    """ Pipeline step to create consensus sequence from VCF
 
     Args:
         vcf (str): Path to variant calls (VCF)
@@ -121,7 +121,7 @@ def vcf_to_fasta(
         raise sysutils.PipelineStepError('VCF file is required')
 
     # Outputs
-    out_fasta = os.path.join(outdir, 'updated.fa')
+    out_fasta = os.path.join(outdir, 'consensus.fa')
 
     sysutils.log_message('[--- vcf_to_fasta ---]\n', quiet, logfile)
     sysutils.log_message('VCF:          %s\n' % vcf, quiet, logfile)
