@@ -1,18 +1,20 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+from __future__ import print_function
+
 import os
 import argparse
 import gzip
 import re
 
-from ..utils.sysutils import PipelineStepError
-from ..utils.sysutils import existing_file, args_params
-from ..utils.sequtils import wrap, get_ambig
+from haphpipe.utils import sysutils
+from haphpipe.utils import sequtils
+
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
+
 
 VCFCOLS = ['CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']
 idx = {v:i for i,v in enumerate(VCFCOLS)}
@@ -53,35 +55,86 @@ def call_gt(RA, AA, svals, min_dp=1, major=0.5, minor=0.2):
             return [b for b,c in samp_ad if c >= samp_dp * minor]
 
 def stageparser(parser):
-    parser.add_argument('--vcf', type=existing_file, required=True,
+    """ Add stage-specific options to argparse parser
+
+    Args:
+        parser (argparse.ArgumentParser): ArgumentParser object
+
+    Returns:
+        None
+
+    """
+    group1 = parser.add_argument_group('Input/Output')
+    group1.add_argument('--vcf', type=sysutils.existing_file, required=True,
                         help='VCF file (created with all sites).')
-    parser.add_argument('--sampidx', type=int,
+    group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
+                        help='Output directory')
+    group1.add_argument('--sampidx', type=int, default=0,
                         help='Index for sample if multi-sample VCF')
-    parser.add_argument('--min_dp', type=int,
+
+    group2 = parser.add_argument_group('Variant options')
+    group2.add_argument('--min_dp', type=int, default=1,
                         help='Minimum depth to call site')
-    parser.add_argument('--major', type=float,
+    group2.add_argument('--major', type=float, default=0.5,
                         help='Allele fraction to make unambiguous call')
-    parser.add_argument('--minor', type=float,
+    group2.add_argument('--minor', type=float, default=0.2,
                         help='Allele fraction to make ambiguous call')
-    parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), 
-                        default=sys.stdout, help='Output file')
+
+    group3 = parser.add_argument_group('Settings')
+    group3.add_argument('--keep_tmp', action='store_true',
+                        help='Do not delete temporary directory')
+    group3.add_argument('--quiet', action='store_true',
+                        help='''Do not write output to console
+                                (silence stdout and stderr)''')
+    group3.add_argument('--logfile', type=argparse.FileType('a'),
+                        help='Append console output to this file')
+    # group3.add_argument('--debug', action='store_true',
+    #                    help='Print commands but do not run')
+
     parser.set_defaults(func=vcf_to_fasta)
 
 
-def vcf_to_fasta(vcf=None, sampidx=0, min_dp=1, major=0.5, minor=0.2, outfile=None):
-    """ Call consensus sequence from VCF file
-    """
-    if vcf is None:
-        raise PipelineStepError('VCF file is required')
+def vcf_to_fasta(
+        vcf=None, outdir='.',
+        sampidx=0, min_dp=1, major=0.5, minor=0.2,
+        keep_tmp=False, quiet=False, logfile=None,
+    ):
+    """ Pipeline step to create updated FASTA from VCF
 
-    # Open filehandle for VCF
+    Args:
+        vcf (str): Path to variant calls (VCF)
+        outdir (str): Path to output directory
+        sampidx (int): Index for sample if multi-sample VCF
+        min_dp (int): Minimum depth to call site
+        major (float): Allele fraction to make unambiguous call
+        minor (float): Allele fraction to make ambiguous call
+        keep_tmp (bool): Do not delete temporary directory
+        quiet (bool): Do not write output to console
+        logfile (file): Append console output to this file
+        debug (bool): Print commands but do not run
+
+    Returns:
+
+    """
+    # Check inputs
+    if vcf is None:
+        raise sysutils.PipelineStepError('VCF file is required')
+
+    # Outputs
+    out_fasta = os.path.join(outdir, 'updated.fa')
+
+    sysutils.log_message('[--- vcf_to_fasta ---]\n', quiet, logfile)
+    sysutils.log_message('VCF:          %s\n' % vcf, quiet, logfile)
+
+    # Parse VCF
+    chroms = []
+    samples = []
+
     if os.path.splitext(vcf)[1] == '.gz':
         fh = gzip.open(vcf, 'rb')
     else:
         fh = open(vcf, 'rU')
     
-    chroms = []
-    samples = []
     lines = (l.strip('\n') for l in fh)
     
     # Parse headers
@@ -98,13 +151,13 @@ def vcf_to_fasta(vcf=None, sampidx=0, min_dp=1, major=0.5, minor=0.2, outfile=No
     
     if len(samples) <= sampidx:
         msg = 'Sample index %d does not exist. Samples: %s' % (sampidx, str(samples))
-        raise PipelineStepError(msg)
-    
+        raise sysutils.PipelineStepError(msg)
+
+    chrom_ordered = [_[0] for _ in chroms]
     chroms = dict(chroms)
     newseqs = dict((c, ['.'] * chroms[c]) for c in chroms.keys())
     imputed = dict((c, [''] * chroms[c]) for c in chroms.keys())
     for l in lines:
-        # chrom, start, stop, gt = parse_vcf_row(l, sampidx, min_dp, major, minor)    
         chrom, start, stop, RA, AA, info, svals = parse_vcf_sample(l, sampidx)
         gt = call_gt(RA, AA, svals, min_dp, major, minor)
         
@@ -116,21 +169,39 @@ def vcf_to_fasta(vcf=None, sampidx=0, min_dp=1, major=0.5, minor=0.2, outfile=No
                 imputed[chrom][start-1] = gt[0]
             else:
                 if all(len(_) == 1 for _ in gt):
-                    newseqs[chrom][start-1] = get_ambig(gt)
-                    imputed[chrom][start-1] = get_ambig(gt)
+                    newseqs[chrom][start-1] = sequtils.get_ambig(gt)
+                    imputed[chrom][start-1] = sequtils.get_ambig(gt)
                 else:
                     newseqs[chrom][start-1] = ''.join(gt[0])
                     imputed[chrom][start-1] = ''.join(gt[0])  
     # newseqs = imputed
-    for chrom in sorted(newseqs.keys()):
-        print >>outfile, '>%s SM:%s' % (chrom, samples[sampidx])
-        ns = ''.join(newseqs[chrom])
-        # print >>outfile, ns
-        print >>outfile, wrap(ns.replace('.', 'n'))
-    return outfile.name
+    sysutils.log_message('Output FASTA: %s\n' % out_fasta, quiet, logfile)
+    with open(out_fasta, 'w') as outh:
+        for chrom in chrom_ordered:
+            print('>%s SM:%s' % (chrom, samples[sampidx]), file=outh)
+            ns = ''.join(newseqs[chrom])
+            # print >>outfile, ns
+            print(sequtils.wrap(ns.replace('.', 'n')), file=outh)
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Create consensus sequence from VCF')
+    return out_fasta
+
+
+def console():
+    """ Entry point
+
+    Returns:
+        None
+
+    """
+    parser = argparse.ArgumentParser(
+        description='Create consensus sequence from VCF',
+        formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
+    )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**args_params(args))
+    args.func(**sysutils.args_params(args))
+
+
+if __name__ == '__main__':
+    console()
+

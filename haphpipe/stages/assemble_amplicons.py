@@ -1,105 +1,146 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+from __future__ import print_function
 import os
 import argparse
 
 from Bio import SeqIO
 
-from ..utils.sysutils import check_dependency, existing_file, existing_dir, args_params
-from ..utils.sysutils import create_tempdir, remove_tempdir
-from ..utils.sequtils import clean_seqnames, wrap
-from ..utils import alignobj
-from ..utils.alignutils import align_nucmer, show_aligns, parse_show_aligns
-from ..utils.gtfparse import gtf_parser
+from haphpipe.utils import sysutils
+from haphpipe.utils import sequtils
+from haphpipe.utils import alignutils
+from haphpipe.utils import gtfparse
+
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
+
 
 def stageparser(parser):
+    """ Add stage-specific options to argparse parser
+
+    Args:
+        parser (argparse.ArgumentParser): ArgumentParser object
+
+    Returns:
+        None
+
+    """
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--contigs_fa', type=existing_file, required=True,
+    group1.add_argument('--contigs_fa', type=sysutils.existing_file, required=True,
                         help='Fasta file with assembled contigs')
-    group1.add_argument('--ref_fa', type=existing_file, required=True,
+    group1.add_argument('--ref_fa', type=sysutils.existing_file, required=True,
                         help='Fasta file with reference genome to scaffold against')
-    group1.add_argument('--ref_gtf', type=existing_file, required=True,
+    group1.add_argument('--ref_gtf', type=sysutils.existing_file, required=True,
                         help='GTF format file containing amplicon regions')
-    group1.add_argument('--outdir', type=existing_dir,
+    group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
                         help='Output directory')
     
     group2 = parser.add_argument_group('Scaffold options')
-    group2.add_argument('--seqname',
-                        help='Name to append to scaffold sequence.')
-    group2.add_argument('--padding', type=int,
-                        help='Name to append to scaffold sequence.')
+    group2.add_argument('--seqname', default='sample01',
+                        help='Name to append to amplicon sequence.')
+    group2.add_argument('--padding', type=int, default=50,
+                        help='Bases to include outside reference annotation.')
         
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--keep_tmp', action='store_true',
                         help='Additional options')
+    group3.add_argument('--quiet', action='store_true',
+                        help='''Do not write output to console
+                                (silence stdout and stderr)''')
+    group3.add_argument('--logfile', type=argparse.FileType('a'),
+                        help='Append console output to this file')
     group3.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
+
     parser.set_defaults(func=assemble_amplicons)
 
-def assemble_amplicons(contigs_fa=None, ref_fa=None, ref_gtf=None, outdir='.',
-                      seqname='newseq', padding=50,
-                      keep_tmp=False, debug=False):
-    """ Scaffold contigs using reference sequence
+
+def assemble_amplicons(
+        contigs_fa=None, ref_fa=None, ref_gtf=None, outdir='.',
+        seqname='sample01', padding=50,
+        keep_tmp=False, quiet=False, logfile=None, debug=False
+    ):
+    """ Pipeline step to assemble contigs using reference and amplicon regions
+
+    Args:
+        contigs_fa (str): Path to fasta file with assembled contigs
+        ref_fa (str): Path to reference fasta file
+        ref_gtf (str): Path to reference GTF file with amplicons
+        outdir (str): Path to output directory
+        seqname (str): Name to append to scaffold sequence
+        padding (int): Bases to include outside reference annotation
+        keep_tmp (bool): Do not delete temporary directory
+        quiet (bool): Do not write output to console
+        logfile (file): Append console output to this file
+        debug (bool): Print commands but do not run
+
+    Returns:
+        out_assembly (str): Path to assembled amplicons (FASTA)
+        out_summary (str): Path to assembly summary
+        out_padded (str): Path to padded output file
+
     """
     # Check dependencies
-    check_dependency('nucmer')
-    check_dependency('delta-filter')
-    check_dependency('show-tiling')
+    sysutils.check_dependency('nucmer')
+    sysutils.check_dependency('delta-filter')
+    sysutils.check_dependency('show-tiling')
 
     # Outputs
-    out_padded = os.path.join(outdir, 'padded.out')
+    out_assembly = os.path.join(outdir, 'amplicon_assembly.fa')
+    out_summary = os.path.join(outdir, 'amplicon_summary.txt')
+    out_padded = os.path.join(outdir, 'amplicon_padded.out')
     if os.path.exists(out_padded): os.unlink(out_padded)
-    out_assembly = os.path.join(outdir, 'assembly.fa')
-    out_summary = os.path.join(outdir, 'summary.txt')
-    
+
     # Temporary directory
-    tempdir = create_tempdir('assemble_amplicons')
+    tempdir = sysutils.create_tempdir(
+        'assemble_amplicons', None, quiet, logfile
+    )
 
     # Create fasta file with sequence IDs only (remove decription)
-    tmp_contigs_fa = os.path.join(tempdir, 'query.fna')
-    with open(tmp_contigs_fa, 'w') as outh:
-        for n,s in clean_seqnames(open(contigs_fa, 'rU')):
-            print >>outh, '>%s\n%s' % (n, wrap(s))
-    
+    tmp_contigs_fa = sequtils.clean_seqnames_file(contigs_fa, tempdir)
+
     # Load reference sequence(s)
     refseqs = {s.id:s for s in SeqIO.parse(ref_fa, 'fasta')}
     
     # For each amplicon, extract the sequence from the reference and scaffold using nucmer    
     amplicon_alignments = []
-    amps = [gtf_line for gtf_line in gtf_parser(ref_gtf) if gtf_line.feature == 'amplicon']
+    amps = [gtf_line for gtf_line in gtfparse.gtf_parser(ref_gtf) if gtf_line.feature == 'amplicon']
     for gl in amps:
-        print >>sys.stderr, 'Amplicon ref|%s|reg|%s' % (gl.chrom, gl.attrs['name'])
+        msg = 'Amplicon ref|%s|reg|%s\n' % (gl.chrom, gl.attrs['name'])
+        sysutils.log_message(msg, quiet, logfile)
         # Extract reference amplicon
         amp_s = max(0, (gl.start - 1) - padding)
         amp_e = min(len(refseqs[gl.chrom]), gl.end + padding)
         ampseq = refseqs[gl.chrom].seq[amp_s:amp_e]
         amplicon_fa = os.path.join(tempdir, 'subject.fa')
         with open(amplicon_fa, 'w') as outh:
-            print >>outh, '>ref|%s|reg|%s' % (gl.chrom, gl.attrs['name'])
-            print >>outh, wrap(str(ampseq))
+            print('>ref|%s|reg|%s' % (gl.chrom, gl.attrs['name']), file=outh)
+            print(sequtils.wrap(str(ampseq)), file=outh)
         
         # Align with nucmer 
-        fil,til = align_nucmer(amplicon_fa, tmp_contigs_fa, tempdir)
-        
+        fil,til = alignutils.align_nucmer(
+            tmp_contigs_fa, amplicon_fa, tempdir, quiet, logfile, debug
+        )
+
+        # Skip everything else if debugging
+        if debug: continue
+
         # Parse tiling and show alignments
-        trows = [alignobj.TilingRow(l) for l in open(til, 'rU')]
+        trows = [alignutils.TilingRow(l) for l in open(til, 'rU')]
         if not trows:
             amplicon_alignments.append((gl.chrom, gl.attrs['name'], None))
         else:
             # Initialize alignment
             amp_seq = SeqIO.read(amplicon_fa, 'fasta')
-            combined = alignobj.EmptyReferenceAlignment(str(amp_seq.seq).lower())
+            combined = alignutils.EmptyReferenceAlignment(str(amp_seq.seq).lower())
             for tr in trows:
-                out = show_aligns(tr.ref, tr.qry, fil)
-                for nucaln in parse_show_aligns(out):
+                out = alignutils.show_aligns(tr.ref, tr.qry, fil)
+                for nucaln in alignutils.parse_show_aligns(out):
                     combined = combined.merge_alignments(nucaln)
                     with open(out_padded, 'a') as outh:
-                        print >>outh, '%s\n%s\n%s' % (tr, combined.raln(), combined.qaln())
+                        print('%s\n%s\n%s' % (tr, combined.raln(), combined.qaln()), file=outh)
             amplicon_alignments.append((gl.chrom, gl.attrs['name'], combined))
         
         # Cleanup
@@ -107,25 +148,47 @@ def assemble_amplicons(contigs_fa=None, ref_fa=None, ref_gtf=None, outdir='.',
             if os.path.isfile(f):
                 os.unlink(f)
 
+    # Write to output files
     with open(out_assembly, 'w') as outseq, open(out_summary, 'w') as outsum:
         for chrom, name, combined in amplicon_alignments:
-            # chrom, start, end, name, combined = t[0], int(t[1]), int(t[2]), t[3], t[4]
             amp_id = 'sid|%s|ref|%s|reg|%s' % (seqname, chrom, name)
             if combined is None:
-                print >>outsum, '%s\tFAIL\t%d' % (amp_id, 0)
-                print >>sys.stderr, '%s\tFAIL\t%d\t%s' % (amp_id, 0,"👎🏼")
+                msg1 = '%s\tFAIL\t%d' % (amp_id, 0)
+                msg2 = '%s\tFAIL\t%d\t%s\n' % (amp_id, 0,"👎🏼")
+                if logfile is not None:
+                    print('%s\tFAIL\t%d\t%s' % (amp_id, 0, "👎🏼"),
+                          file=logfile)
             else:
                 scaf, s, e = combined.scaffold2()
-                print >>outsum, '%s\tPASS\t%d' % (amp_id, len(scaf))
-                print >>sys.stderr, '%s\tPASS\t%d\t%s' % (amp_id, len(scaf), "👍🏼")
-                print >>outseq, '>%s' % (amp_id)
-                print >>outseq, '%s' % wrap(scaf)
-    
-    if not keep_tmp:
-        remove_tempdir(tempdir, 'assemble_scaffold')
+                msg1 = '%s\tPASS\t%d' % (amp_id, len(scaf))
+                msg2 = '%s\tPASS\t%d\t%s\n' % (amp_id, len(scaf), "👍🏼")
+                print('>%s' % (amp_id), file=outseq)
+                print('%s' % sequtils.wrap(scaf), file=outseq)
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Scaffold contigs using reference sequence')
+            print(msg1, file=outsum)
+            sysutils.log_message(msg2, quiet, logfile)
+
+    if not keep_tmp:
+        sysutils.remove_tempdir(tempdir, 'assemble_amplicons', quiet, logfile)
+
+    return out_assembly, out_summary, out_padded
+
+
+def console():
+    """ Entry point
+
+    Returns:
+        None
+
+    """
+    parser = argparse.ArgumentParser(
+        description='Assemble contigs using reference and amplicon regions',
+        formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
+    )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**args_params(args))       
+    args.func(**sysutils.args_params(args))
+
+
+if __name__ == '__main__':
+    console()

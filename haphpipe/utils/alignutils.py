@@ -8,11 +8,9 @@ import re
 from subprocess import check_output
 from collections import defaultdict
 
-# from Bio import SeqIO
+from Bio import SeqIO
 
 from haphpipe.utils import sysutils
-from haphpipe.utils.sysutils import command_runner
-from haphpipe.utils.sequtils import HPSeqIO
 
 
 __author__ = 'Matthew L. Bendall'
@@ -289,7 +287,27 @@ class TilingRow:
 
 ## Utility functions
 
-def align_promer(query_fa, ref_fa, outdir, debug=False, quiet=False, logfile=None):
+def align_promer(
+        query_fa, ref_fa, outdir, quiet=False, logfile=None, debug=False
+    ):
+    """
+
+    Args:
+        query_fa:
+        ref_fa:
+        outdir:
+        quiet:
+        logfile:
+        debug:
+
+    Returns:
+
+    """
+    # Outputs
+    out_del = os.path.join(outdir, 'promer.delta')
+    out_fil = os.path.join(outdir, 'promer.filter')
+    out_til = os.path.join(outdir, 'promer.tiling')
+
     # Command 1: promer
     cmd1 = ['promer',
         '--prefix', os.path.join(outdir, 'promer'),
@@ -301,11 +319,8 @@ def align_promer(query_fa, ref_fa, outdir, debug=False, quiet=False, logfile=Non
     ]
     
     # Command 2: delta-filter
-    cmd2 = ['delta-filter',
-        '-q',
-        os.path.join(outdir, 'promer.delta'),
-        '>',
-        os.path.join(outdir, 'promer.filter')
+    cmd2 = [
+        'delta-filter', '-q', out_del, '>', out_fil
     ]
     
     # Command 3: show-tiling
@@ -314,18 +329,37 @@ def align_promer(query_fa, ref_fa, outdir, debug=False, quiet=False, logfile=Non
         '-i', '%.1f' % 0.6,
         '-l', '%d' % 200,
         '-v', '%.1f' % 60,
-        os.path.join(outdir, 'promer.filter'),
+        out_fil,
         '>',
-        os.path.join(outdir, 'promer.tiling'),
+        out_til,
     ]
     sysutils.command_runner(
         [cmd1, cmd2, cmd3,], 'align_promer', quiet, logfile, debug
     )
-    return os.path.join(outdir, 'promer.filter'), os.path.join(outdir, 'promer.tiling')
+    return out_fil, out_til
 
 
-def align_nucmer(ref_fa, query_fa, outdir,
-                 quiet=False, logfile=None, debug=False):
+def align_nucmer(
+        query_fa, ref_fa, outdir, quiet=False, logfile=None, debug=False
+    ):
+    """
+
+    Args:
+        query_fa:
+        ref_fa:
+        outdir:
+        quiet:
+        logfile:
+        debug:
+
+    Returns:
+
+    """
+    # Outputs
+    out_del = os.path.join(outdir, 'nucmer.delta')
+    out_fil = os.path.join(outdir, 'nucmer.filter')
+    out_til = os.path.join(outdir, 'nucmer.tiling')
+
     # Command 1: nucmer
     cmd1 = ['nucmer',
         '--prefix', os.path.join(outdir, 'nucmer'),
@@ -337,11 +371,8 @@ def align_nucmer(ref_fa, query_fa, outdir,
     ]
     
     # Command 2: delta-filter
-    cmd2 = ['delta-filter',
-        '-q',
-        os.path.join(outdir, 'nucmer.delta'),
-        '>',
-        os.path.join(outdir, 'nucmer.filter')
+    cmd2 = [
+        'delta-filter', '-q', out_del, '>', out_fil
     ]
     
     # Command 3: show-tiling
@@ -350,18 +381,20 @@ def align_nucmer(ref_fa, query_fa, outdir,
         '-i', '%.1f' % 0.6,
         '-l', '%d' % 200,
         '-v', '%.1f' % 60,
-        os.path.join(outdir, 'nucmer.filter'),
+        out_fil,
         '>',
-        os.path.join(outdir, 'nucmer.tiling'),
+        out_til,
     ]
     sysutils.command_runner(
         [cmd1, cmd2, cmd3, ], 'align_nucmer', quiet, logfile, debug
     )
-    return os.path.join(outdir, 'nucmer.filter'), os.path.join(outdir, 'nucmer.tiling')
+    return out_fil, out_til
 
-def show_aligns(ref, qry, delta):
+
+def show_aligns(ref, qry, delta, quiet=False, logfile=None, debug=False):
     cmd1 = ['show-aligns', '-r', delta, ref, qry]
     return check_output(cmd1)
+
 
 def parse_show_aligns(out):
     """ Returns show_aligns """
@@ -376,16 +409,42 @@ def parse_show_aligns(out):
             yield NucmerReferenceAlignment(cur_report)
             cur_report = None
 
-def assemble_to_ref(ref_fa, qry_fa, workdir, pad_fh=None, debug=True):
-    fil, til = align_nucmer(ref_fa, qry_fa, workdir)
+
+def assemble_to_ref(
+        qry_fa, ref_fa, outdir, pad_fh=None,
+        quiet=False, logfile=None, debug=False
+    ):
+    """
+
+    Args:
+        qry_fa:
+        ref_fa:
+        outdir:
+        pad_fh:
+        quiet:
+        logfile:
+        debug:
+
+    Returns:
+
+    """
+    # Align query to reference
+    fil, til = align_nucmer(qry_fa, ref_fa, outdir, quiet, logfile, debug)
+    if debug:
+        return None
+
+    # Parse tiling rows
     tr_byref = defaultdict(list)
     for l in open(til, 'rU'):
         tr = TilingRow(l)
         tr_byref[tr.ref].append(tr)
-    
+
+    # Load reference(s)
     refs = sorted(tr_byref.keys())
-    ref_dict = {s.id:s for s in HPSeqIO.parse(ref_fa, 'fasta')}
-    print('\nReferences: %s' % ', '.join(refs), file=sys.stderr)
+    ref_dict = {s.id:s for s in SeqIO.parse(ref_fa, 'fasta')}
+    sysutils.log_message(
+        '\nReferences: %s\n' % ', '.join(refs), quiet, logfile
+    )
     
     scaffolds = {}
     for ref in refs:
@@ -412,12 +471,12 @@ def assemble_to_ref(ref_fa, qry_fa, workdir, pad_fh=None, debug=True):
                     flag = False
             
             for aln_report in aln_reports:
-                if debug:
-                    print("*" * 80, file=sys.stderr)
-                    print('\n'.join(aln_report), file=sys.stderr)
-                    print("*" * 80, file=sys.stderr)
+                # if debug:
+                #     print("*" * 80, file=sys.stderr)
+                #     print('\n'.join(aln_report), file=sys.stderr)
+                #     print("*" * 80, file=sys.stderr)
                 nucaln = NucmerReferenceAlignment(aln_report)
-                print('%d-%d' % (nucaln.rstart, nucaln.rend))
+                # print('%d-%d' % (nucaln.rstart, nucaln.rend))
                 if pad_fh is not None:
                     pad = empty.merge_alignments(nucaln)
                     print('%s%s' % (tr.qry.ljust(40), pad.padded()), file=pad_fh)

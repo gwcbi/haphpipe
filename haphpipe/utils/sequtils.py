@@ -6,8 +6,9 @@ from __future__ import absolute_import
 
 import sys
 import re
+import os
 
-from .helpers import merge_interval_list
+from haphpipe.utils.helpers import merge_interval_list
 
 
 __author__ = 'Matthew L. Bendall'
@@ -53,18 +54,55 @@ def fastagen(fh):
             seq = seq + l
     yield name, seq
 
-def clean_seqnames(fh):
-    for i, tup in enumerate(fastagen(fh)):
-        yield ('%s' % tup[0].split()[0], tup[1])
 
 def wrap(s, wraplen=60):
     return '\n'.join(s[i:(i+wraplen)] for i in range(0, len(s), wraplen))
+
+
+def clean_seqnames(fh):
+    """ Remove sequence description
+
+    Some programs do not play nicely with FASTA description lines that include
+    whitespace. Strip off anything after first whitespace
+
+    Args:
+        fh (file): Filehandle of FASTA file
+
+    Yields:
+        seq_id, seq (2-tuple of str): The next sequence ID and sequence pair
+
+    """
+    for i, tup in enumerate(fastagen(fh)):
+        yield ('%s' % tup[0].split()[0], tup[1])
+
+
+def clean_seqnames_file(infile, outdir):
+    """ Remove sequence description from file
+
+    Some programs do not play nicely with FASTA description lines that include
+    whitespace. Strip off anything after first whitespace. See `clean_seqnames`
+
+    Args:
+        infile (str): Path to input FASTA file
+        outdir (str): Path to output directory
+
+    Returns:
+        out_clean (str): Path to clean FASTA file
+
+    """
+    out_clean = os.path.join(outdir, 'tmp_clean_seqnames.fa')
+    with open(out_clean, 'w') as outh, open(infile, 'rU') as fh:
+        for n,s in clean_seqnames(fh):
+            print('>%s\n%s' % (n, wrap(s)), file=outh)
+    return out_clean
+
 
 def N50(l):
     slen = sorted(l)
     cumsum = [sum(slen[:i+1]) for i in range(len(slen))]
     i = len([c for c in cumsum if c < sum(slen)*0.5])
     return len(slen)-i, slen[i]
+
 
 def assembly_stats(fh, outh=sys.stdout):
     contig_lengths = sorted(len(s) for n,s in fastagen(fh))

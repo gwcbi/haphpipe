@@ -1,97 +1,142 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+from __future__ import print_function
 import os
 import argparse
 
-from Bio import SeqIO
+from haphpipe.utils import sysutils
+from haphpipe.utils import sequtils
+from haphpipe.utils import alignutils
 
-from ..utils.sysutils import check_dependency, existing_file, existing_dir, args_params
-from ..utils.sysutils import create_tempdir, remove_tempdir
-from ..utils.sequtils import clean_seqnames, wrap
-from ..utils.alignutils import assemble_to_ref
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--contigs_fa', type=existing_file, required=True,
+    group1.add_argument('--contigs_fa', type=sysutils.existing_file,
+                        required=True,
                         help='Fasta file with assembled contigs')
-    group1.add_argument('--ref_fa', type=existing_file, required=True,
-                        help='Fasta file with reference genome to scaffold against')
-    group1.add_argument('--outdir', type=existing_dir,
+    group1.add_argument('--ref_fa', type=sysutils.existing_file,
+                        required=True,
+                        help='''Fasta file with reference genome to scaffold
+                                against''')
+    group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
                         help='Output directory')
     
     group2 = parser.add_argument_group('Scaffold options')
-    group2.add_argument('--seqname',
+    group2.add_argument('--seqname', default='sample01',
                         help='Name to append to scaffold sequence.')
     
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--keep_tmp', action='store_true',
                         help='Additional options')
+    group3.add_argument('--quiet', action='store_true',
+                        help='''Do not write output to console
+                                (silence stdout and stderr)''')
+    group3.add_argument('--logfile', type=argparse.FileType('a'),
+                        help='Append console output to this file')
     group3.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
+
     parser.set_defaults(func=assemble_scaffold)
 
 
-def assemble_scaffold(contigs_fa=None, ref_fa=None, outdir='.',
-                      seqname='scaffold',
-                      keep_tmp=False, debug=False):
-    """ Scaffold contigs using reference sequence
+def assemble_scaffold(
+        contigs_fa=None, ref_fa=None, outdir='.',
+        seqname='sample01',
+        keep_tmp=False, quiet=False, logfile=None, debug=False
+    ):
+    """ Pipeline step to assemble contigs to reference scaffold
+
+    Args:
+        contigs_fa (str): Path to fasta file with assembled contigs
+        ref_fa (str): Path to reference fasta file
+        outdir (str): Path to output directory
+        seqname (str): Name to append to scaffold sequence
+        keep_tmp (bool): Do not delete temporary directory
+        quiet (bool): Do not write output to console
+        logfile (file): Append console output to this file
+        debug (bool): Print commands but do not run
+
+    Returns:
+        out_scaffold (str): Path to scaffold FASTA. Reference positions that
+                            were not covered have 'n'
+        out_imputed (str):  Path to imputed FASTA. Reference positions that
+                            were not covered have reference base.
+        out_aln (str):      Path to FASTA alignment between scaffold and
+                            reference.
+        out_padded (str):   Path to output with all contigs aligned to
+                            reference.
     """
     # Check dependencies
-    check_dependency('nucmer')
-    check_dependency('delta-filter')
-    check_dependency('show-tiling')
+    sysutils.check_dependency('nucmer')
+    sysutils.check_dependency('delta-filter')
+    sysutils.check_dependency('show-tiling')
     
     # Outputs
-    out_scaffold = os.path.join(outdir, 'scaffold.fa')
-    out_imputed = os.path.join(outdir, 'imputed.fa')
-    out_aln = os.path.join(outdir, 'aligned.fa')
+    out_scaffold = os.path.join(outdir, 'scaffold_assembly.fa')
+    out_imputed = os.path.join(outdir, 'scaffold_imputed.fa')
+    out_aln = os.path.join(outdir, 'scaffold_aligned.fa')
+    out_padded = os.path.join(outdir, 'scaffold_padded.out')
     
     # Temporary directory
-    tempdir = create_tempdir('assemble_scaffold')
+    tempdir = sysutils.create_tempdir(
+        'assemble_scaffold', None, quiet, logfile
+    )
 
     # Create fasta file with sequence IDs only (remove decription)
-    tmp_contigs_fa = os.path.join(tempdir, 'query.fna')
-    with open(tmp_contigs_fa, 'w') as outh:
-        for n,s in clean_seqnames(open(contigs_fa, 'rU')):
-            print >>outh, '>%s\n%s' % (n, wrap(s))
-    
-    with open(os.path.join(outdir, 'padded.out'), 'w') as pad_fh:
-        scaffolds = assemble_to_ref(ref_fa, tmp_contigs_fa, tempdir, pad_fh=pad_fh)
-        
+    tmp_contigs_fa = sequtils.clean_seqnames_file(contigs_fa, tempdir)
+
+    with open(out_padded, 'w') as pad_fh:
+        scaffolds = alignutils.assemble_to_ref(
+            tmp_contigs_fa, ref_fa, tempdir, pad_fh=pad_fh,
+            quiet=quiet, logfile=logfile, debug=debug
+        )
+
     # Output scaffolds as FASTA
     with open(out_scaffold, 'w') as outh:
         for ref in sorted(scaffolds.keys()):
             n = '%s.%s' % (ref.split('.')[0], seqname)
             s = scaffolds[ref].scaffold()
-            print >>outh, '>%s\n%s' % (n, wrap(s))
+            print('>%s\n%s' % (n, sequtils.wrap(s)), file=outh)
 
     # Output imputed as FASTA
     with open(out_imputed, 'w') as outh:
         for ref in sorted(scaffolds.keys()):
             n = '%s.%s' % (ref.split('.')[0], seqname)
             s = scaffolds[ref].imputed()
-            print >>outh, '>%s\n%s' % (n, wrap(s))
-    
+            print('>%s\n%s' % (n, sequtils.wrap(s)), file=outh)
+
     # Output alignments for other pipeline stages
     with open(out_aln, 'w') as outh:
         for ref in sorted(scaffolds.keys()):
-            n = '%s.%s' % (ref.split('.')[0], seqname)        
-            print >>outh, '>REF|%s\n%s' % (n, scaffolds[ref].raln())
-            print >>outh, '>%s\n%s' % (n, scaffolds[ref].qaln())
-    
-    if not keep_tmp:
-        remove_tempdir(tempdir, 'assemble_scaffold')
-    
-    return out_scaffold
+            n = '%s.%s' % (ref.split('.')[0], seqname)
+            print('>REF|%s\n%s' % (n, scaffolds[ref].raln()), file=outh)
+            print('>%s\n%s' % (n, scaffolds[ref].qaln()), file=outh)
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Scaffold contigs using reference sequence')
+    if not keep_tmp:
+        sysutils.remove_tempdir(tempdir, 'assemble_scaffold', quiet, logfile)
+
+    return out_scaffold, out_imputed, out_aln, out_padded
+
+
+def console():
+    """ Entry point
+
+    Returns:
+        None
+
+    """
+    parser = argparse.ArgumentParser(
+        description='Scaffold contigs using reference sequence',
+        formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
+    )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**args_params(args))
+    args.func(**sysutils.args_params(args))
+
+
+if __name__ == '__main__':
+    console()
