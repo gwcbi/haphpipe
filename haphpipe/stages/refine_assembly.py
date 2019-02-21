@@ -3,7 +3,6 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
-from builtins import input
 
 import os
 import shutil
@@ -108,40 +107,39 @@ def refine_assembly(**kwargs):
 def refine_assembly_step(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
         iteration=None, subsample=None, seed=None,
-        ncpu=1, keep_tmp=False,
-        quiet=False, logfile=None, debug=False,
+        ncpu=1, keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
     # Temporary directory
     tempdir = sysutils.create_tempdir('refine_assembly', None, quiet, logfile)
 
-    if subsample is None:
-        sq1, sq2, sqU = fq1, fq2, fqU
-    else:
+    if subsample is not None:
         seed = seed if seed is not None else random.randrange(1, 1000)
-        sq1, sq2, sqU = sample_reads.sample_reads(
-            fq1=fq1, fq2=fq2, fqU=fqU, outdir=tempdir,
+        full1, full2, fullU = fq1, fq2, fqU
+        fq1, fq2, fqU = sample_reads.sample_reads(
+            fq1=full1, fq2=full2, fqU=fullU, outdir=tempdir,
             nreads=subsample, seed=seed,
             quiet=False, logfile=logfile, debug=debug
         )
 
-
+    # Align to reference
     tmp_aligned, tmp_bt2 = align_reads.align_reads(
-        fq1=sq1, fq2=sq2, fqU=sqU, ref_fa=ref_fa, outdir=tempdir,
-        ncpu=ncpu, keep_tmp=keep_tmp,
-        quiet=quiet, logfile=logfile, debug=debug,
+        fq1=fq1, fq2=fq2, fqU=fqU, ref_fa=ref_fa, outdir=tempdir,
+        ncpu=ncpu,
+        keep_tmp=keep_tmp, quiet=quiet, logfile=logfile, debug=debug,
     )
 
+    # Call variants
     tmp_vcf = call_variants.call_variants(
         aln_bam=tmp_aligned, ref_fa=ref_fa, outdir=tempdir,
         emit_all=True,
-        ncpu=ncpu, keep_tmp=keep_tmp,
-        quiet=quiet, logfile=logfile, debug=debug,
+        ncpu=ncpu,
+        keep_tmp=keep_tmp, quiet=quiet, logfile=logfile, debug=debug,
     )
 
+    # Generate consensus
     tmp_fasta = vcf_to_consensus.vcf_to_consensus(
         vcf=tmp_vcf, outdir=tempdir, sampidx=0,
-        keep_tmp=keep_tmp,
-        quiet=quiet, logfile=logfile
+        keep_tmp=keep_tmp, quiet=quiet, logfile=logfile
     )
 
     # Copy command
@@ -164,8 +162,7 @@ def refine_assembly_step(
 def progressive_refine_assembly(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
         max_step=None, subsample=None, seed=None,
-        ncpu=1, keep_tmp=False,
-        quiet=False, logfile=None, debug=False,
+        ncpu=1, keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
 
     # Outputs

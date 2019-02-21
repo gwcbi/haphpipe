@@ -1,64 +1,107 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+from __future__ import print_function
+from __future__ import absolute_import
+
 import os
-import re
 import argparse
 import shutil
 
 from Bio import SeqIO
+
+from haphpipe.utils import sysutils
+
+from haphpipe.stages import align_reads
+from haphpipe.stages import call_variants
+from haphpipe.stages import vcf_to_consensus
 
 from ..utils.helpers import guess_encoding
 from ..utils.sysutils import PipelineStepError, command_runner
 from ..utils.sysutils import check_dependency, existing_file, existing_dir, args_params
 from ..utils.sysutils import create_tempdir, remove_tempdir
 from ..utils.sequtils import wrap, extract_amplicons
-from vcf_to_fasta import vcf_to_fasta
+from .vcf_to_fasta import vcf_to_fasta
 from ..utils.alignutils import assemble_to_ref
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--fq1', type=existing_file,
+    group1.add_argument('--fq1', type=sysutils.existing_file,
                         help='Fastq file with read 1')
-    group1.add_argument('--fq2', type=existing_file,
+    group1.add_argument('--fq2', type=sysutils.existing_file,
                         help='Fastq file with read 1')
-    group1.add_argument('--fqU', type=existing_file,
+    group1.add_argument('--fqU', type=sysutils.existing_file,
                         help='Fastq file with unpaired reads')
-    group1.add_argument('--assembly_fa', type=existing_file, required=True,
-                        help='Fasta file with assembly')
-    group1.add_argument('--outdir', type=existing_dir,
+    group1.add_argument('--ref_fa', type=sysutils.existing_file, required=True,
+                        help='Consensus fasta file')
+    group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
                         help='Output directory')
     
     group2 = parser.add_argument_group('Fix consensus options')
-    group2.add_argument('--bt2_preset', 
+    group2.add_argument('--bt2_preset', default='very-sensitive',
                         choices=['very-fast', 'fast', 'sensitive', 'very-sensitive',
                                  'very-fast-local', 'fast-local', 'sensitive-local',
                                  'very-sensitive-local',],
                         help='Bowtie2 preset to use')
-    group2.add_argument('--rgid',
-                        help='Read group ID')
+    group2.add_argument('--sample_id', default='sample01',
+                        help='Sample ID')
     
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--ncpu', type=int,
                         help='Number of CPU to use')
-    group3.add_argument('--encoding',
-                        help='Quality score encoding')
     group3.add_argument('--keep_tmp', action='store_true',
                         help='Do not delete temporary directory')
+    group3.add_argument('--quiet', action='store_true',
+                        help='''Do not write output to console
+                                (silence stdout and stderr)''')
+    group3.add_argument('--logfile', type=argparse.FileType('a'),
+                        help='Append console output to this file')
     group3.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
     parser.set_defaults(func=fix_consensus)
 
-def fix_consensus(fq1=None, fq2=None, fqU=None, assembly_fa=None, outdir='.',
-        bt2_preset='very-sensitive', min_dp=1, rgid='test',
-        ncpu=1, encoding=None, keep_tmp=False, debug=False,
+
+def fix_consensus(fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
+        bt2_preset='very-sensitive', min_dp=1, rgid='sample01',
+        ncpu=1,
+        keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
-    """ Pipeline step to refine assembly
+    """ Pipeline step to fix consensus
     """
+    # Outputs
+    out_ref = os.path.join(outdir, 'final.fasta')
+    out_aligned = os.path.join(outdir, 'final.bam')
+    out_bt2 = os.path.join(outdir, 'final.bt2.out')
+    out_vcf = os.path.join(outdir, 'final.vcf.gz')
+
+    # Align to reference
+    tmp_aligned, tmp_bt2 = align_reads.align_reads(
+        fq1=fq1, fq2=fq2, fqU=fqU, ref_fa=ref_fa, outdir=tempdir,
+        bt2_preset=bt2_preset,
+        ncpu=ncpu,
+        keep_tmp=keep_tmp, quiet=quiet, logfile=logfile, debug=debug,
+    )
+
+    # Call variants
+    tmp_vcf = call_variants.call_variants(
+        aln_bam=tmp_aligned, ref_fa=ref_fa, outdir=tempdir,
+        emit_all=False,
+        ncpu=ncpu,
+        keep_tmp=keep_tmp, quiet=quiet, logfile=logfile, debug=debug,
+    )
+
+    shutil.copy(ref_fa, out_ref)
+    shutil.copy(tmp_aligned, out_aligned)
+    shutil.copy(tmp_bt2, out_bt2)
+    shutil.copy(tmp_vcf, out_vcf)
+
+    return out_ref, out_aligned, out_vcf, out_bt2
+
+
+'''
     # Check inputs
     if fq1 is not None and fq2 is not None and fqU is None:
         input_reads = "paired" # Paired end
@@ -230,14 +273,23 @@ def fix_consensus(fq1=None, fq2=None, fqU=None, assembly_fa=None, outdir='.',
         remove_tempdir(tempdir, 'fix_consensus')
     
     return
+'''
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Fix consensus sequence')
+def console():
+    """ Entry point
+
+    Returns:
+        None
+
+    """
+    parser = argparse.ArgumentParser(
+        description='''Finalize consensus sequence, align all reads to
+                       consensus, and call variants in dataset''',
+        formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
+    )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**args_params(args))
+    args.func(**sysutils.args_params(args))
 
-    
-
-
-
+if __name__ == '__main__':
+    console()

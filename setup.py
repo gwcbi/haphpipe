@@ -29,10 +29,9 @@ setuptools.setup(name='haphpipe',
               'hp_assemble_scaffold=haphpipe.stages.assemble_scaffold:console',
               'hp_align_reads=haphpipe.stages.align_reads:console',
               'hp_call_variants=haphpipe.stages.call_variants:console',
-              'hp_vcf_to_fasta=haphpipe.stages.vcf_to_fasta:console',
+              'hp_vcf_to_consensus=haphpipe.stages.vcf_to_consensus:console',
               'hp_refine_assembly=haphpipe.stages.refine_assembly:console',
-
-
+              'hp_finalize_consensus=haphpipe.stages.fix_consensus:console'
           ],
       },
       zip_safe=False,
