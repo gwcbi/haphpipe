@@ -130,14 +130,6 @@ def extract_amplicons(name, seq, maxgap=30):
         amp = seq[iv[0]:iv[1]]
         yield amp_name, amp
 
-'''
-def extract_amplicons_fh(fh, mingap=30):
-    amplicons = []
-    for name, seq in fastagen(fh):
-        for aname, aseq in extract_amplicons(name, seq):
-            amplicons.append((aname, aseq))
-    return amplicons
-'''
 
 AMBIG_MAP = {'AC': 'M',
              'AG': 'R',
@@ -161,8 +153,27 @@ def region_to_tuple(regstr):
     return chrom, reg_s, reg_e
 
 def parse_seq_id(s, delim='|'):
-    f = s.split(delim)
+    f = [_ for _ in s.split(delim) if _]
     return {f[i]:f[i+1] for i in range(0, len(f), 2)}
+
+
+def make_seq_id(**kwargs):
+    """ Return sequence ID in consistent format"""
+    ret = ''
+    keyorder = ['sid', 'ref', 'reg',]
+    for k in keyorder:
+        if k in kwargs:
+            ret += '%s|%s|' % (k, kwargs.pop(k))
+    for k,v in kwargs.items():
+        ret += '%s|%s|' % (k, v)
+    return ret
+
+def update_seq_id(seq_id, sample_id):
+    if sample_id == 'sampleXX':
+        return seq_id
+    d = parse_seq_id(seq_id)
+    d['sid'] = sample_id
+    return make_seq_id(**d)
 
 """
 class BedLine(object):

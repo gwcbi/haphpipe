@@ -144,7 +144,7 @@ def assemble_denovo_spades(
     sysutils.check_dependency('spades.py')
 
     # Outputs
-    out_fa = os.path.join(outdir, 'denovo_contigs.fa')
+    out_fa = os.path.join(outdir, 'denovo_contigs.fna')
     out_summary = os.path.join(outdir, 'denovo_summary.txt')
 
     # Temporary directory

@@ -121,7 +121,7 @@ def vcf_to_consensus(
         raise sysutils.PipelineStepError('VCF file is required')
 
     # Outputs
-    out_fasta = os.path.join(outdir, 'consensus.fa')
+    out_fasta = os.path.join(outdir, 'consensus.fna')
 
     sysutils.log_message('[--- vcf_to_fasta ---]\n', quiet, logfile)
     sysutils.log_message('VCF:          %s\n' % vcf, quiet, logfile)
@@ -178,9 +178,9 @@ def vcf_to_consensus(
     sysutils.log_message('Output FASTA: %s\n' % out_fasta, quiet, logfile)
     with open(out_fasta, 'w') as outh:
         for chrom in chrom_ordered:
-            print('>%s SM:%s' % (chrom, samples[sampidx]), file=outh)
+            new_seqid = sequtils.update_seq_id(chrom, samples[sampidx])
+            print('>%s SM:%s' % (new_seqid, samples[sampidx]), file=outh)
             ns = ''.join(newseqs[chrom])
-            # print >>outfile, ns
             print(sequtils.wrap(ns.replace('.', 'n')), file=outh)
 
     return out_fasta

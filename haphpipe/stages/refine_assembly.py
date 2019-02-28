@@ -53,14 +53,15 @@ def stageparser(parser):
     group2.add_argument('--seed', type=int,
                         help='''Seed for random number generator (ignored if
                                 not subsampling).''')
-    group2.add_argument('--sample_id', default='sample01',
+    group2.add_argument('--sample_id', default='sampleXX',
                         help='Sample ID. Used as read group ID in BAM')
 
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--ncpu', type=int, default=1,
                         help='Number of CPUs to use')
     group3.add_argument('--xmx', type=int,
-                        help='Maximum heap size for Java VM, in gigabytes.')
+                        default=sysutils.get_java_heap_size(),
+                        help='Maximum heap size for Java VM, in GB.')
     group3.add_argument('--keep_tmp', action='store_true',
                         help='Do not delete temporary directory')
     group3.add_argument('--quiet', action='store_true',
@@ -85,8 +86,9 @@ def refine_assembly(**kwargs):
 
 def refine_assembly_step(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
-        iteration=None, subsample=None, seed=None, sample_id='sample01',
-        ncpu=1, keep_tmp=False, quiet=False, logfile=None, debug=False,
+        iteration=None, subsample=None, seed=None, sample_id='sampleXX',
+        ncpu=1, xmx=sysutils.get_java_heap_size(),
+        keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
     # Temporary directory
     tempdir = sysutils.create_tempdir('refine_assembly', None, quiet, logfile)
@@ -103,7 +105,7 @@ def refine_assembly_step(
     # Align to reference
     tmp_aligned, tmp_bt2 = align_reads.align_reads(
         fq1=fq1, fq2=fq2, fqU=fqU, ref_fa=ref_fa, outdir=tempdir,
-        ncpu=ncpu, sample_id=sample_id,
+        ncpu=ncpu, xmx=xmx, sample_id=sample_id,
         keep_tmp=keep_tmp, quiet=quiet, logfile=logfile, debug=debug,
     )
 
@@ -111,7 +113,7 @@ def refine_assembly_step(
     tmp_vcf = call_variants.call_variants(
         aln_bam=tmp_aligned, ref_fa=ref_fa, outdir=tempdir,
         emit_all=True,
-        ncpu=ncpu,
+        ncpu=ncpu, xmx=xmx,
         keep_tmp=keep_tmp, quiet=quiet, logfile=logfile, debug=debug,
     )
 
@@ -123,10 +125,10 @@ def refine_assembly_step(
 
     # Copy command
     if iteration is None:
-        out_refined = os.path.join(outdir, 'refined.fasta')
+        out_refined = os.path.join(outdir, 'refined.fna')
         out_bt2 = os.path.join(outdir, 'refined_bt2.out')
     else:
-        out_refined = os.path.join(outdir, 'refined.%02d.fasta' % iteration)
+        out_refined = os.path.join(outdir, 'refined.%02d.fna' % iteration)
         out_bt2 = os.path.join(outdir, 'refined_bt2.%02d.out' % iteration)
 
     shutil.copy(tmp_fasta, out_refined)
@@ -140,12 +142,13 @@ def refine_assembly_step(
 
 def progressive_refine_assembly(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
-        max_step=None, subsample=None, seed=None,
-        ncpu=1, keep_tmp=False, quiet=False, logfile=None, debug=False,
+        max_step=None, subsample=None, seed=None, sample_id='sampleXX',
+        ncpu=1, xmx=sysutils.get_java_heap_size(),
+        keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
 
     # Outputs
-    out_refined = os.path.join(outdir, 'refined.fasta')
+    out_refined = os.path.join(outdir, 'refined.fna')
     out_bt2 = os.path.join(outdir, 'refined_bt2.out')
     out_summary = os.path.join(outdir, 'refined_summary.out')
 
@@ -171,8 +174,8 @@ def progressive_refine_assembly(
         # Generate a refined assembly
         tmp_refined, tmp_bt2 = refine_assembly_step(
             fq1=fq1, fq2=fq2, fqU=fqU, ref_fa=cur_asm, outdir=outdir,
-            iteration=i, subsample=subsample,
-            ncpu=ncpu, keep_tmp=keep_tmp,
+            iteration=i, subsample=subsample, sample_id=sample_id,
+            ncpu=ncpu, xmx=xmx, keep_tmp=keep_tmp,
             quiet=True, logfile=logfile, debug=debug
         )
 

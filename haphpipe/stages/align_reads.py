@@ -43,8 +43,8 @@ def stageparser(parser):
                                  'fast-local', 'sensitive-local',
                                  'very-sensitive-local',],
                         help='Bowtie2 preset')
-    group2.add_argument('--rgid', default='sample01',
-                        help='Read group ID')
+    group2.add_argument('--sample_id', default='sampleXX',
+                        help='Sample ID. Used as read group ID in BAM')
     group2.add_argument('--no_realign', action='store_true',
                         help='Do not realign indels')
     group2.add_argument('--remove_duplicates', action='store_true',
@@ -75,7 +75,7 @@ def stageparser(parser):
 
 def align_reads(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
-        bt2_preset='sensitive-local', rgid='sample01',
+        bt2_preset='sensitive-local', sample_id='sampleXX',
         no_realign=False, remove_duplicates=False, encoding=None,
         ncpu=1, xmx=sysutils.get_java_heap_size(),
         keep_tmp=False, quiet=False, logfile=None, debug=False,
@@ -89,7 +89,7 @@ def align_reads(
         ref_fa (str): Path to reference fasta file
         outdir (str): Path to output directory
         bt2_preset (str): Bowtie2 preset to use for alignment
-        rgid (str): Read group ID
+        sample_id (str): Read group ID
         no_realign (bool): Do not realign indels
         remove_duplicates (bool): Remove duplicates from final alignment
         encoding (str): Quality score encoding
@@ -158,8 +158,8 @@ def align_reads(
         '-p', '%d' % ncpu,
         '--phred33' if encoding=="Phred+33" else '--phred64',
         '--no-unal',
-        '--rg-id', rgid,
-        '--rg', 'SM:%s' % rgid,
+        '--rg-id', sample_id,
+        '--rg', 'SM:%s' % sample_id,
         '--rg', 'LB:1',
         '--rg', 'PU:1',
         '--rg', 'PL:illumina',

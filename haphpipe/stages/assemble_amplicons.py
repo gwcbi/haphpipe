@@ -38,8 +38,8 @@ def stageparser(parser):
                         help='Output directory')
     
     group2 = parser.add_argument_group('Scaffold options')
-    group2.add_argument('--seqname', default='sample01',
-                        help='Name to append to amplicon sequence.')
+    group2.add_argument('--sample_id', default='sampleXX',
+                        help='Sample ID.')
     group2.add_argument('--padding', type=int, default=50,
                         help='Bases to include outside reference annotation.')
         
@@ -59,7 +59,7 @@ def stageparser(parser):
 
 def assemble_amplicons(
         contigs_fa=None, ref_fa=None, ref_gtf=None, outdir='.',
-        seqname='sample01', padding=50,
+        sample_id='sampleXX', padding=50,
         keep_tmp=False, quiet=False, logfile=None, debug=False
     ):
     """ Pipeline step to assemble contigs using reference and amplicon regions
@@ -69,7 +69,7 @@ def assemble_amplicons(
         ref_fa (str): Path to reference fasta file
         ref_gtf (str): Path to reference GTF file with amplicons
         outdir (str): Path to output directory
-        seqname (str): Name to append to scaffold sequence
+        sample_id (str): Name to append to scaffold sequence
         padding (int): Bases to include outside reference annotation
         keep_tmp (bool): Do not delete temporary directory
         quiet (bool): Do not write output to console
@@ -88,7 +88,7 @@ def assemble_amplicons(
     sysutils.check_dependency('show-tiling')
 
     # Outputs
-    out_assembly = os.path.join(outdir, 'amplicon_assembly.fa')
+    out_assembly = os.path.join(outdir, 'amplicon_assembly.fna')
     out_summary = os.path.join(outdir, 'amplicon_summary.txt')
     out_padded = os.path.join(outdir, 'amplicon_padded.out')
     if os.path.exists(out_padded): os.unlink(out_padded)
@@ -150,8 +150,8 @@ def assemble_amplicons(
 
     # Write to output files
     with open(out_assembly, 'w') as outseq, open(out_summary, 'w') as outsum:
-        for chrom, name, combined in amplicon_alignments:
-            amp_id = 'sid|%s|ref|%s|reg|%s' % (seqname, chrom, name)
+        for ref_id, reg, combined in amplicon_alignments:
+            amp_id = sequtils.make_seq_id(sid=sample_id, ref=ref_id, reg=reg)
             if combined is None:
                 msg1 = '%s\tFAIL\t%d' % (amp_id, 0)
                 msg2 = '%s\tFAIL\t%d\t%s\n' % (amp_id, 0,"👎🏼")
