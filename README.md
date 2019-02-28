@@ -8,7 +8,7 @@ _**HA**plotype and **PH**ylodynamics pipeline for viral assembly, population gen
 __1. Create a conda environment with the following dependencies__
 
 ```bash
-conda create -n haphpipe2 \
+conda create -n haphpipe \
     python=2.7 \
     future \
     pyyaml \
@@ -25,10 +25,6 @@ conda create -n haphpipe2 \
     spades \
     blast
 
-```
-
-```
-conda install biopython=1.73 bowtie2=2.3.4.3 flash=1.2.11 freebayes=1.2.0 gatk=3.8 mummer=3.23 picard=2.18.26 samtools=1.9 trimmomatic=0.38 trinity=date.2011_11_26
 ```
 
 __2. Activate the environment__
@@ -62,13 +58,23 @@ pip install git+git://github.com/gwcbi/haphpipe.git
 
 ## Pipelines
 
-Describe haphpipe amplicon, assembly, and other pipelines
+
+[TODO] describe pipelines
+
+##### `haphpipe_assemble_01`
+
+
+
 
 ## Stages
 
-Describe each haphpipe stage
+Each stage can be run on its own. Stages are grouped into categories...
+
+[TODO] Describe each haphpipe stage
 
 ### hp_reads
+
+Manipulate reads. Input is reads in fastq format, output is modified reads in fastq format.
 
 ##### hp_sample_reads
 
@@ -80,7 +86,31 @@ Describe each haphpipe stage
 
 ### hp_assemble
 
-####
+Assemble consensus sequence(s). Input reads (in fastq format) are assembled 
+using either denovo assembly or reference-based alignment. 
+Resulting consensus can be further refined.
+
+##### hp_assemble_denovo
+
+##### hp_assemble_amplicons
+
+##### hp_assemble_scaffold
+
+##### hp_align_reads
+
+##### hp_call_variants
+
+##### hp_vcf_to_consensus
+
+##### hp_refine_assembly
+
+##### hp_finalize_assembly
 
 
+### hp_annotate
 
+Annotation
+
+### hp_haplotype
+
+Haplotype
