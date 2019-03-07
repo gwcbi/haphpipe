@@ -78,11 +78,19 @@ Manipulate reads. Input is reads in fastq format, output is modified reads in fa
 
 ##### hp_sample_reads
 
+Subsample reads using seqtk. Input is reads in fastq format. Options are the number of reads to sample, fraction of reads to sample (between 0 and 1), and seed. Output is sampled reads in fastq format.
+
 ##### hp_trim_reads
+
+Trim reads using Trimmomatic. Input is reads in fastq format. Options are adapter file, trimmers, and encoding. Output is trimmed reads in fastq format.
 
 ##### hp_join_reads
 
+Join reads using FLASH. Input is reads in fastq format. Output is joined reads in fastq format.
+
 ##### hp_ec_reads
+
+Error correction using spades. Input is reads in fastq format. Output is error-corrected reads in fastq format.
 
 ### hp_assemble
 
