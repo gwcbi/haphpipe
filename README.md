@@ -100,6 +100,8 @@ Resulting consensus can be further refined.
 
 ##### hp_assemble_denovo
 
+Assemble reads using denovo assembly. Input is reads in fastq format. Output is contigs in FNA format.
+
 ##### hp_assemble_amplicons
 
 ##### hp_assemble_scaffold
