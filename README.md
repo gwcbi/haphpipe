@@ -69,7 +69,8 @@ pip install git+git://github.com/gwcbi/haphpipe.git
 ## Stages
 
 Each stage can be run on its own. Stages are grouped into categories...
-More detailed description of command line options for each stage are available in the [wiki] (https://github.com/gwcbi/haphpipe/wiki).
+More detailed description of command line options for each stage are available in the [wiki](https://github.com/gwcbi/haphpipe/wiki).
+
 [TODO] Finish describing each haphpipe stage. 
 
 ### hp_reads
