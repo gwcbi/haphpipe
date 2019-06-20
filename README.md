@@ -101,13 +101,17 @@ Resulting consensus can be further refined.
 
 ##### hp_assemble_denovo
 
-Assemble reads using denovo assembly. Input is reads in fastq format. Output is contigs in FNA format.
+Assemble reads using denovo assembly. Input is reads in FASTQ format. Output is contigs in FNA format.
 
 ##### hp_assemble_amplicons
 
+
 ##### hp_assemble_scaffold
 
+Scaffold contigs using reference sequence. Input is contigs in FNA format and reference sequence in FASTA format. Output is scaffold assembly, alligned scaffold, imputed scaffold, and padded scaffold all in FASTA format (.fa extension).
+
 ##### hp_align_reads
+
 
 ##### hp_call_variants
 
@@ -116,7 +120,6 @@ Assemble reads using denovo assembly. Input is reads in fastq format. Output is 
 ##### hp_refine_assembly
 
 ##### hp_finalize_assembly
-
 
 ### hp_annotate
 
