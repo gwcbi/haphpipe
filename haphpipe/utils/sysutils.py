@@ -62,9 +62,12 @@ def determine_dependency_path(choices):
 
 def log_message(msg, quiet, logfile):
     if not quiet:
-        sys.stderr.write(msg)
+        sys.stderr.write(msg.encode('utf-8'))
     if logfile is not None:
-        logfile.write(msg)
+        try:
+            logfile.write(msg.encode('utf-8')) # python2
+        except TypeError:
+            logfile.write(msg) # python3
 
 
 def pretty_print_commands(cmds, stage, out_fh=sys.stderr):
@@ -131,6 +134,7 @@ def existing_file(f):
         raise argparse.ArgumentTypeError("{0} does not exist".format(f))
     return f
 
+
 def existing_dir(f):
     """
     'Type' for argparse - checks that file exists but does not open.
@@ -139,6 +143,7 @@ def existing_dir(f):
         raise argparse.ArgumentTypeError("{0} does not exist".format(f))
     return f
 
+
 def args_params(args):
     """ Returns a dictionary from argparse namespace
         Excludes "func" argument
@@ -146,17 +151,6 @@ def args_params(args):
     d = {k:v for k,v in list(vars(args).items()) if v is not None}
     if 'func' in d: d.pop('func')
     return d
-
-"""
-def command_runner_stdout(cmd, out_fn):
-    with open(out_fn, 'w') as outh:
-        p = Popen(cmd, stderr=PIPE, stdout=outh)
-        ret = p.communicate()
-    if ret[1]: print >>sys.stderr, ret[1]
-    if p.returncode != 0:
-        sys.exit('Command %s failed with exit code %d' % (cmd[0], p.returncode))
-    return
-"""
 
 
 def create_tempdir(step='HPstep', basedir=None, quiet=False, logfile=None):

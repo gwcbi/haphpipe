@@ -107,8 +107,7 @@ def assemble_amplicons(
     
     # For each amplicon, extract the sequence from the reference and scaffold using nucmer    
     amplicon_alignments = []
-    amps = [gl for gl in gtfparse.gtf_parser(ref_gtf) if
-            gl.feature == 'amplicon']
+    amps = [gl for gl in gtfparse.gtf_parser(ref_gtf) if gl.feature == 'amplicon']
 
     for gl in amps:
         msg = 'Amplicon ref|%s|reg|%s\n' % (gl.chrom, gl.attrs['name'])
@@ -157,14 +156,14 @@ def assemble_amplicons(
             amp_id = sequtils.make_seq_id(sid=sample_id, ref=ref_id, reg=reg)
             if combined is None:
                 msg1 = '%s\tFAIL\t%d' % (amp_id, 0)
-                msg2 = '%s\tFAIL\t%d\t%s\n' % (amp_id, 0,"👎🏼")
+                msg2 = u'%s\tFAIL\t%d\t%s\n' % (amp_id, 0, u"👎🏼")
                 if logfile is not None:
-                    print('%s\tFAIL\t%d\t%s' % (amp_id, 0, "👎🏼"),
+                    print(u'%s\tFAIL\t%d\t%s' % (amp_id, 0, u"👎🏼"),
                           file=logfile)
             else:
                 scaf, s, e = combined.scaffold2()
                 msg1 = '%s\tPASS\t%d' % (amp_id, len(scaf))
-                msg2 = '%s\tPASS\t%d\t%s\n' % (amp_id, len(scaf), "👍🏼")
+                msg2 = u'%s\tPASS\t%d\t%s\n' % (amp_id, len(scaf), u"👍🏼")
                 print('>%s' % (amp_id), file=outseq)
                 print('%s' % sequtils.wrap(scaf), file=outseq)
 

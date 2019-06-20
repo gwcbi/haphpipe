@@ -6,6 +6,8 @@ from __future__ import print_function
 from builtins import map
 from builtins import str
 from builtins import zip
+from past.builtins import basestring
+
 import os
 import argparse
 import gzip
@@ -26,7 +28,7 @@ idx = {v:i for i,v in enumerate(VCFCOLS)}
 def parse_vcf_sample(row, sampidx=0):
     """ Parse row in VCF file
     """
-    if type(row) is str:
+    if isinstance(row, basestring):
         row = row.strip('\n').split('\t')
     chrom = row[idx['CHROM']]
     start = int(row[idx['POS']])

@@ -5,10 +5,13 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 from builtins import object
+from past.builtins import basestring
+
 import re
 import sys
 
 from haphpipe.utils.helpers import cast_str
+
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
@@ -61,8 +64,12 @@ class GTFRow(object):
         return '\t'.join(self.fmt())
 
 def gtf_parser(infile):
-    fh = open(infile, 'rU') if type(infile) is str else infile
-    for l in fh:
+    if isinstance(infile, basestring):
+        lines = (l for l in open(infile, 'r'))
+    else:
+        lines = (l for l in infile)
+
+    for l in lines:
         yield GTFRow(l)
 
 """
