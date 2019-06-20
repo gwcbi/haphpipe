@@ -4,6 +4,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from builtins import map
+from builtins import str
+from builtins import zip
+from builtins import range
 import os
 import shutil
 import re
@@ -135,7 +139,7 @@ def refine_assembly_step(
     shutil.copy(tmp_bt2, out_bt2)
 
     if not keep_tmp:
-        sysutils.remove_tempdir(tempdir, 'refine_assembly', quiet, logfile)
+        pass # sysutils.remove_tempdir(tempdir, 'refine_assembly', quiet, logfile)
 
     return out_refined, out_bt2
 

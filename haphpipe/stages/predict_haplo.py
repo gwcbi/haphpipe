@@ -1,6 +1,8 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import map
 import sys
 import os
 import re
@@ -17,10 +19,10 @@ from ..utils.sysutils import existing_file, existing_dir, command_runner, args_p
 from ..utils.sysutils import create_tempdir, remove_tempdir
 from ..utils.sequtils import fastagen, unambig_intervals
 
-import post_assembly #import samtools_depth, get_covered_intervals
+from . import post_assembly #import samtools_depth, get_covered_intervals
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 
 config_template = '''### configuration file for the HIVhaplotyper
@@ -90,26 +92,26 @@ DEFAULTS = {
 def rename_best(d, rn):
     fasta = glob(os.path.join(d, '%s*global*.fas' % rn))
     coords = [re.match('\S+global_(\d+)_(\d+).fas', f) for f in fasta]
-    coords = [map(int, m.groups()) if m else [0,0] for m in coords]
+    coords = [list(map(int, m.groups())) if m else [0,0] for m in coords]
     sizes = [c[1]-c[0] for c in coords]
-    if max(sizes) == 0: print >>sys.stderr, "WARNING: Max sizes is 0."
+    if max(sizes) == 0: print("WARNING: Max sizes is 0.", file=sys.stderr)
     bestidx = sizes.index(max(sizes))
     bestfile = '%s.best_%d_%d.fas' % (rn, coords[bestidx][0], coords[bestidx][1])
     if os.path.exists(os.path.join(d, bestfile)):
-        print >>sys.stderr, "WARNING: File %s exists." % os.path.join(d, bestfile)
+        print("WARNING: File %s exists." % os.path.join(d, bestfile), file=sys.stderr)
         os.unlink(os.path.join(d, bestfile))
     shutil.copy(fasta[bestidx], os.path.join(d, bestfile))
 
     # Copy output files to output directory
     html = glob(os.path.join(d, '%s*global*.html' % rn))
     coords = [re.match('\S+global_visuAlign_(\d+)_(\d+).html', f) for f in html]
-    coords = [map(int, m.groups()) if m else [0,0] for m in coords]
+    coords = [list(map(int, m.groups())) if m else [0,0] for m in coords]
     sizes = [c[1]-c[0] for c in coords]
-    if max(sizes) == 0: print >>sys.stderr, "WARNING: Max sizes is 0."
+    if max(sizes) == 0: print("WARNING: Max sizes is 0.", file=sys.stderr)
     bestidx = sizes.index(max(sizes))
     bestfile = '%s.best_%d_%d.html' % (rn, coords[bestidx][0], coords[bestidx][1])
     if os.path.exists(os.path.join(d, bestfile)):
-        print >>sys.stderr, "WARNING: File %s exists." % os.path.join(d, bestfile)
+        print("WARNING: File %s exists." % os.path.join(d, bestfile), file=sys.stderr)
         os.unlink(os.path.join(d, bestfile))
     shutil.copy(html[bestidx], os.path.join(d, bestfile))
     
@@ -161,11 +163,11 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     check_dependency('samtools')
     try:
         x = check_call('samtools 2>&1 >/dev/null | grep -q "collate"', shell=True)
-        if debug: print >>sys.stderr, "Using samtools collate"
+        if debug: print("Using samtools collate", file=sys.stderr)
         has_collate = True
     except CalledProcessError as e:
         has_collate = False
-        if debug: print >>sys.stderr, "Using samtools sort"        
+        if debug: print("Using samtools sort", file=sys.stderr)        
     
     # Temporary directory
     tempdir = create_tempdir('predict_haplo')
@@ -182,7 +184,7 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     name, seq = seqs[0][0].split()[0], seqs[0][1]
     
     if interval_txt:
-        print >>sys.stderr, 'Found intervals file...'
+        print('Found intervals file...', file=sys.stderr)
         cov_ivs = defaultdict(list)
         for l in open(interval_txt, 'rU'):
             chrom = l.split(':')[0]
@@ -190,7 +192,7 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
         recon_intervals = cov_ivs[name]  
     else:
         # Identify reconstruction intervals, coverage method    
-        print >>sys.stderr, 'Searching for covered intervals...'
+        print('Searching for covered intervals...', file=sys.stderr)
         out = post_assembly.samtools_depth(alignment)
         covlines = (l.split('\t') for l in out.strip('\n').split('\n'))
         cov_ivs = post_assembly.get_intervals(covlines, ref_fa, max_ambig, min_depth, debug)
@@ -200,16 +202,16 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     recon_intervals.sort(key=lambda x:x[0])
     
     if not recon_intervals:
-        print >>sys.stderr, "No intervals larger than %d were found" % min_interval
+        print("No intervals larger than %d were found" % min_interval, file=sys.stderr)
         sys.exit()
     else:    
-        print >>sys.stderr, 'Haplotype Reconstruction Regions:'
+        print('Haplotype Reconstruction Regions:', file=sys.stderr)
         for iv in recon_intervals:
-            print >>sys.stderr, '%s:%d-%d' % (name, iv[0], iv[1])
+            print('%s:%d-%d' % (name, iv[0], iv[1]), file=sys.stderr)
     
     # Copy reference fasta
     with open(os.path.join(tempdir, 'reference.fasta'), 'w') as outh:
-        print >>outh, '>%s\n%s' % (name, seq)
+        print('>%s\n%s' % (name, seq), file=outh)
     ph_params['ref_fasta'] = 'reference.fasta'
     
     # Collate or sort 
@@ -240,16 +242,16 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     do_parallel = 1 < len(recon_intervals) < ncpu
     
     if do_parallel:
-        print >>sys.stderr, "Processing in parallel..."
+        print("Processing in parallel...", file=sys.stderr)
         processes = []
     else:
-        print >>sys.stderr, "Processing in order..."
+        print("Processing in order...", file=sys.stderr)
         cmds = [['cd', tempdir, ], ]
     
     runnames = []
     for i,iv in enumerate(recon_intervals):
         runnames.append('PH%02d' % (i+1))
-        print >>sys.stderr, "Reconstruction region %s: %d - %d" % (runnames[-1], iv[0], iv[1])
+        print("Reconstruction region %s: %d - %d" % (runnames[-1], iv[0], iv[1]), file=sys.stderr)
         
         # Construct params specific for region
         reg_params = dict(ph_params)
@@ -261,7 +263,7 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
         config_file = '%s.config' % runnames[-1]        
         with open(os.path.join(tempdir, config_file), 'w') as outh:
             tmpconfig = config_template % reg_params
-            print >>outh, tmpconfig.replace('###', '%')
+            print(tmpconfig.replace('###', '%'), file=outh)
         
         # Create the output directory for this run
         rundir = os.path.join(outdir, runnames[-1])
@@ -279,10 +281,10 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
             ['cp', '%s*global*.html' %  runnames[-1], rundir, ],
         ]
         if do_parallel:
-            print >>sys.stderr, "Spawning process for %s" % runnames[-1]
+            print("Spawning process for %s" % runnames[-1], file=sys.stderr)
             rcmds = [['cd', tempdir, ]] + rcmds
             cmdstr = ' && '.join(' '.join(c) for c in rcmds)
-            print >>sys.stderr, cmdstr
+            print(cmdstr, file=sys.stderr)
             if not debug:
                 processes.append((runnames[-1], Popen(cmdstr, shell=True)))
         else:
@@ -293,7 +295,7 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
             for tup in processes[:]:
                 rn, p = tup
                 if p.poll() is not None:
-                    print >>sys.stderr, "PredictHaplo for %s is complete" % rn
+                    print("PredictHaplo for %s is complete" % rn, file=sys.stderr)
                     rename_best(os.path.join(outdir, rn), rn)
                     processes.remove(tup)
             time.sleep(2)

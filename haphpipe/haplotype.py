@@ -1,11 +1,15 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 import argparse
 
-from utils.sysutils import args_params
+from .utils.sysutils import args_params
 
-from stages import predict_haplo
+from .stages import predict_haplo
+
+__author__ = 'Matthew L. Bendall'
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def main():
     parser = argparse.ArgumentParser()

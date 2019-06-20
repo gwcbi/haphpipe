@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+from builtins import str
 import os
 import argparse
 
@@ -106,7 +107,9 @@ def assemble_amplicons(
     
     # For each amplicon, extract the sequence from the reference and scaffold using nucmer    
     amplicon_alignments = []
-    amps = [gtf_line for gtf_line in gtfparse.gtf_parser(ref_gtf) if gtf_line.feature == 'amplicon']
+    amps = [gl for gl in gtfparse.gtf_parser(ref_gtf) if
+            gl.feature == 'amplicon']
+
     for gl in amps:
         msg = 'Amplicon ref|%s|reg|%s\n' % (gl.chrom, gl.attrs['name'])
         sysutils.log_message(msg, quiet, logfile)

@@ -3,6 +3,9 @@
 
 from __future__ import print_function
 
+from builtins import map
+from builtins import str
+from builtins import zip
 import os
 import argparse
 import gzip
@@ -10,6 +13,7 @@ import re
 
 from haphpipe.utils import sysutils
 from haphpipe.utils import sequtils
+from haphpipe.utils.helpers import cast_str
 
 
 __author__ = 'Matthew L. Bendall'
@@ -29,12 +33,12 @@ def parse_vcf_sample(row, sampidx=0):
     stop = start + len(row[idx['REF']]) - 1
     RA = [row[idx['REF']], ]
     AA = [alt for alt in row[idx['ALT']].split(',') if alt != '.']
-    # alleles = RA + AA # [row[idx['REF']]] + [alt for alt in row[idx['ALT']].split(',') if alt != '.']
     info = dict(kv.split('=') if '=' in kv else (kv, True) 
                     for kv in row[idx['INFO']].split(';'))
-    # dp =  int(info['DP']) if 'DP' in info else 0
     fmt = row[idx['FORMAT']].split(':')
-    svals = dict(zip(fmt, row[sampidx + 9].split(':')))
+    svals = dict(list(zip(fmt, row[sampidx + 9].split(':'))))
+    if 'AD' in svals: svals['AD'] = cast_str(svals['AD'])
+    if 'DP' in svals: svals['DP'] = cast_str(svals['DP'])
     return chrom, start, stop, RA, AA, info, svals
 
 def call_gt(RA, AA, svals, min_dp=1, major=0.5, minor=0.2):
@@ -43,7 +47,7 @@ def call_gt(RA, AA, svals, min_dp=1, major=0.5, minor=0.2):
         samp_dp = svals['DP'] if 'DP' in svals else 0
         return None if samp_dp < min_dp else alleles
     else:
-        samp_ad = map(int, svals['AD'].split(','))
+        samp_ad = list(map(int, svals['AD'].split(',')))
         samp_dp = sum(samp_ad)
         if samp_dp < min_dp:
             return None
@@ -123,7 +127,7 @@ def vcf_to_consensus(
     # Outputs
     out_fasta = os.path.join(outdir, 'consensus.fna')
 
-    sysutils.log_message('[--- vcf_to_fasta ---]\n', quiet, logfile)
+    sysutils.log_message('[--- vcf_to_consensus ---]\n', quiet, logfile)
     sysutils.log_message('VCF:          %s\n' % vcf, quiet, logfile)
 
     # Parse VCF
@@ -131,12 +135,10 @@ def vcf_to_consensus(
     samples = []
 
     if os.path.splitext(vcf)[1] == '.gz':
-        fh = gzip.open(vcf, 'rb')
+        lines = (l.decode('utf-8').strip('\n') for l in gzip.open(vcf, 'rb'))
     else:
-        fh = open(vcf, 'rU')
-    
-    lines = (l.strip('\n') for l in fh)
-    
+        lines = (l.strip('\n') for l in open(vcf, 'r'))
+
     # Parse headers
     for l in lines:
         if l.startswith('##'):
@@ -155,8 +157,8 @@ def vcf_to_consensus(
 
     chrom_ordered = [_[0] for _ in chroms]
     chroms = dict(chroms)
-    newseqs = dict((c, ['.'] * chroms[c]) for c in chroms.keys())
-    imputed = dict((c, [''] * chroms[c]) for c in chroms.keys())
+    newseqs = dict((c, ['.'] * chroms[c]) for c in list(chroms.keys()))
+    imputed = dict((c, [''] * chroms[c]) for c in list(chroms.keys()))
     for l in lines:
         chrom, start, stop, RA, AA, info, svals = parse_vcf_sample(l, sampidx)
         gt = call_gt(RA, AA, svals, min_dp, major, minor)

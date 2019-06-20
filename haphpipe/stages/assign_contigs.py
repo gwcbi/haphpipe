@@ -1,6 +1,7 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from builtins import str
 import sys
 import os
 import argparse
@@ -14,7 +15,7 @@ from ..utils.helpers import merge_interval_list
 
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2016 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 '''
 fmt6_cols = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", 
@@ -30,7 +31,7 @@ def blast_tophits(query, reference):
                stdin=open(query, 'rU'), stdout=PIPE, stderr=PIPE)
     o, e = p.communicate()
     if e.strip('\n'):
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
     return [l.split('\t') for l in o.strip('\n').split('\n')]
 
 
@@ -57,7 +58,7 @@ def assign_contigs(contigs_fa=None, ref_db=None, outdir='.'):
     
     hits = blast_tophits(contigs_fa, ref_db)
     with open(out1, 'w') as outh:
-        print >>outh, '\n'.join('\t'.join(h) for h in hits)
+        print('\n'.join('\t'.join(h) for h in hits), file=outh)
     
     contig_dict = {s.id:s for s in SeqIO.parse(contigs_fa, 'fasta')}
     by_subtype = defaultdict(list)
@@ -68,14 +69,14 @@ def assign_contigs(contigs_fa=None, ref_db=None, outdir='.'):
     for st in subtypes:
         st_contigs = os.path.join(outdir, '%s.contigs.fa' % st)
         out2.append((st, st_contigs))
-        print >>sys.stderr, '%s%d' % (st.ljust(15), len(by_subtype[st]))
+        print('%s%d' % (st.ljust(15), len(by_subtype[st])), file=sys.stderr)
         with open(st_contigs, 'w') as outh:
             for s in by_subtype[st]:
-                print >>outh, '>%s\n%s' % (s.id, wrap(str(s.seq)))
+                print('>%s\n%s' % (s.id, wrap(str(s.seq))), file=outh)
     
     with open(out3, 'w') as outh:
         for t in out2:    
-            print >>outh, '%s\t%s' % t
+            print('%s\t%s' % t, file=outh)
     
     return out1, out2, out3
 

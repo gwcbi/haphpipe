@@ -1,6 +1,7 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from builtins import str
 import sys
 import os
 import argparse
@@ -14,7 +15,7 @@ from ..utils.sysutils import PipelineStepError
 
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
@@ -70,7 +71,7 @@ def post_assembly(consensus_fa=None, annotations_gtf=None, align_bam=None, varia
     for gr in gtf_parser(annotations_gtf):
         gr.attrs['nfrags'] = reads_per_region((gr.chrom, gr.start, gr.end), align_bam)
         gr.attrs['nsnps'] = snps_per_region((gr.chrom, gr.start, gr.end), variants_vcf)        
-        print gr
+        print(gr)
         summary.append([
             gr.chrom, gr.attrs['name'], gr.feature, gr.start, gr.end,
             gr.end - gr.start,
@@ -85,7 +86,7 @@ def post_assembly(consensus_fa=None, annotations_gtf=None, align_bam=None, varia
             ])
     
     for s in summary:
-        print '\t'.join(str(f) for f in s)
+        print('\t'.join(str(f) for f in s))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Fix consensus sequence')

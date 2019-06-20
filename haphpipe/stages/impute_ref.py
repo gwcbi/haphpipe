@@ -1,6 +1,7 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from builtins import str
 import sys
 import os
 import argparse
@@ -16,7 +17,7 @@ from ..utils.alignutils import align_nucmer, show_aligns
 
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
@@ -53,24 +54,24 @@ def new_impute_ref(assembly_fa=None, ref_fa=None, outfile=None,
         amp_g = extract_amplicons(asm_chrom.id, str(asm_chrom.seq), maxgap=maxgap)
         with open(os.path.join(tempdir, 'qry.fa'), 'w') as outh:
             for i, amp in enumerate(amp_g):
-                print >>outh, '>%s.%d' % (amp[0].split()[0], i)
-                print >>outh, '%s' % amp[1]
+                print('>%s.%d' % (amp[0].split()[0], i), file=outh)
+                print('%s' % amp[1], file=outh)
         
         chrom_scaffolds = assemble_to_ref(ref_fa, os.path.join(tempdir, 'qry.fa'), tempdir)
         if len(chrom_scaffolds) == 1:
-            scaffolds[asm_chrom.id] = chrom_scaffolds.values()[0]
+            scaffolds[asm_chrom.id] = list(chrom_scaffolds.values())[0]
         else:
             raise PipelineStepError("Assembled multiple scaffolds from one initial chromosome")
     
     chroms = sorted(scaffolds.keys())
     for chrom in chroms:
-        print >>outfile, '>%s\n%s' % (chrom, wrap(scaffolds[chrom].get_imputed()))
+        print('>%s\n%s' % (chrom, wrap(scaffolds[chrom].get_imputed())), file=outfile)
     
     if out_aln is not None:
         with open(out_aln, 'w') as outh:
             for chrom in chroms:
-                print >>outh, '>%s' % chrom
-                print >>outh, '\n'.join('\t'.join(row) for row in scaffolds[chrom].as_matrix())
+                print('>%s' % chrom, file=outh)
+                print('\n'.join('\t'.join(row) for row in scaffolds[chrom].as_matrix()), file=outh)
 
 def old_impute_ref(assembly_fa=None, ref_fa=None, outfile=None,
                maxgap=30, out_aln=None,
@@ -86,7 +87,7 @@ def old_impute_ref(assembly_fa=None, ref_fa=None, outfile=None,
     
     asm_dict = {s.id:s for s in SeqIO.parse(assembly_fa, 'fasta')}
     ref_dict = {s.id:s for s in SeqIO.parse(ref_fa, 'fasta')}
-    print >>sys.stderr, "Max gap: %d" % maxgap
+    print("Max gap: %d" % maxgap, file=sys.stderr)
       
     scaffolds = {}
     for chrom in sorted(asm_dict.keys()):
@@ -95,10 +96,10 @@ def old_impute_ref(assembly_fa=None, ref_fa=None, outfile=None,
         tmp_amplicons_fa = os.path.join(tempdir, '%s.amplicons.fasta' % chrom)
         with open(tmp_amplicons_fa, 'w') as outh:
             for i, amp in enumerate(amps):
-                print >>outh, '>%s.%d' % (amp[0].split()[0], i)
-                print >>outh, '%s' % amp[1]
+                print('>%s.%d' % (amp[0].split()[0], i), file=outh)
+                print('%s' % amp[1], file=outh)
         
-        print >>sys.stderr, 'Found %d amplicons for %s' % (i+1, chrom)
+        print('Found %d amplicons for %s' % (i+1, chrom), file=sys.stderr)
         
         # Align amplicons
         fil, til = align_nucmer(tmp_amplicons_fa, ref_fa, tempdir)
@@ -127,13 +128,13 @@ def old_impute_ref(assembly_fa=None, ref_fa=None, outfile=None,
         scaffolds[chrom] = cur_scaf
     
     for chrom in sorted(asm_dict.keys()):
-        print >>outfile, '>%s\n%s' % (chrom, wrap(scaffolds[chrom].get_imputed()))
+        print('>%s\n%s' % (chrom, wrap(scaffolds[chrom].get_imputed())), file=outfile)
     
     if out_aln is not None:
         with open(out_aln, 'w') as outh:
             for chrom in sorted(asm_dict.keys()):
-                print >>outh, '>%s' % chrom
-                print >>outh, '\n'.join('\t'.join(row) for row in scaffolds[chrom].as_matrix())
+                print('>%s' % chrom, file=outh)
+                print('\n'.join('\t'.join(row) for row in scaffolds[chrom].as_matrix()), file=outh)
 
 def impute_ref(assembly_fa=None, ref_fa=None, outfile=None,
                maxgap=30, out_aln=None,

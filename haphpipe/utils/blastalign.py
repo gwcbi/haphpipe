@@ -2,6 +2,10 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import sys
 import os
 import json
@@ -74,10 +78,10 @@ class BlastxAlignment(object):
             qrynuc_s = qjson['int']['from']
             qrynuc_e = qjson['int']['to'] + 1
             qrynuc_seq = self.query[qrynuc_s:qrynuc_e]
-            qrynuc_pos = xrange(qrynuc_s, qrynuc_e)
+            qrynuc_pos = list(range(qrynuc_s, qrynuc_e))
             # Protein
             qryaa_seq = qrynuc_seq.translate()
-            qryaa_pos = xrange(qrynuc_s, qrynuc_e, 3)
+            qryaa_pos = list(range(qrynuc_s, qrynuc_e, 3))
         else:
             assert 'empty' in qjson
             qrynuc_seq = None
@@ -88,12 +92,12 @@ class BlastxAlignment(object):
             refaa_s = sjson['int']['from']
             refaa_e = sjson['int']['to'] + 1
             refaa_seq = self.ref[self.cds_s:self.cds_e].translate()[refaa_s:refaa_e]
-            refaa_pos = xrange(refaa_s, refaa_e)
+            refaa_pos = list(range(refaa_s, refaa_e))
             # Nucleotide
             refnuc_s = self.cds_s + (refaa_s * 3)
             refnuc_e = self.cds_s + (refaa_e * 3)
             refnuc_seq = self.ref[refnuc_s:refnuc_e]
-            refnuc_pos = xrange(refnuc_s, refnuc_e)
+            refnuc_pos = list(range(refnuc_s, refnuc_e))
         else:
             assert 'empty' in sjson
             refnuc_seq = None
@@ -110,7 +114,7 @@ class BlastxAlignment(object):
             refaa_seq = Seq('-' * len(qryaa_seq))
             refaa_pos = [-1] * len(qryaa_seq)
         
-        return zip(refnuc_pos, refnuc_seq, qrynuc_seq, qrynuc_pos), zip(refaa_pos, refaa_seq, qryaa_seq, qryaa_pos)
+        return list(zip(refnuc_pos, refnuc_seq, qrynuc_seq, qrynuc_pos)), list(zip(refaa_pos, refaa_seq, qryaa_seq, qryaa_pos))
 
 def discontinuous_query(aln):
     ''' Find locations in alignment where query is not continuous '''
@@ -283,10 +287,10 @@ def alignAA(refrec, qryrec, cds, altcds=list(), workdir="."):
         else:
             for gap_idx, gap_s, gap_e in discontinuous_query(merged):
                 if overlaps(orange, (gap_s, gap_e)):
-                    for sidx in xrange(len(bx.nuc_align)):
+                    for sidx in range(len(bx.nuc_align)):
                         if gap_s < bx.nuc_align[sidx][3] < gap_e:
                             break
-                    for eidx in xrange(len(bx.nuc_align)-1, -1, -1):
+                    for eidx in range(len(bx.nuc_align)-1, -1, -1):
                         if gap_s < bx.nuc_align[eidx][3] < gap_e:
                             break
                     assert merged[gap_idx-1][3] < bx.nuc_align[sidx][3]

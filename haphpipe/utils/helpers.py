@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-from itertools import tee, izip
-import math
 
-from . import sysutils
+from builtins import next
+from builtins import str
+from builtins import zip
+import math
+from itertools import tee
+try:
+    import itertools.izip as zip
+except ImportError:
+    pass
+
+from haphpipe.utils import sysutils
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
@@ -94,13 +102,27 @@ def guess_encoding(fh, nsamp=100):
     """
     return 'Phred+64' if maxq > 'K' else 'Phred+33'
 
+
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
     next(b, None)
-    return izip(a, b)
-    
+    ret = list(zip(a, b))
+    assert isinstance(ret, iter)
+    return ret
+
+
 def percentile(d, p):
     """ Returns percentile from sorted list """
     k = (len(d)-1) * p
     return (float(d[int(math.floor(k))] + d[int(math.ceil(k))]) / 2)
+
+
+def cast_str(s, dtypes=[int, float, str,]):
+    for at in dtypes:
+        try:
+            ret = at(s)
+            return ret
+        except ValueError:
+            pass
+    return str(s)

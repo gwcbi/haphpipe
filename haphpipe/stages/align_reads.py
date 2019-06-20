@@ -196,6 +196,8 @@ def align_reads(
     cmd8 = [
         'picard', 'MarkDuplicates',
         'CREATE_INDEX=true',
+        'USE_JDK_DEFLATER=true',
+        'USE_JDK_INFLATER=true',
         'M=%s' % os.path.join(tempdir, 'rmdup.metrics.txt'),
         'I=%s' % cur_bam,
         'O=%s' % os.path.join(tempdir, 'rmdup.bam'),
@@ -220,6 +222,7 @@ def align_reads(
         # IndelRealigner
         cmd10 = [
             JAVA_HEAP, GATK_BIN, '-T', 'IndelRealigner',
+            '--use_jdk_deflater', '--use_jdk_inflater',
             '-maxReads', '1000000',
             '-dt', 'NONE',
             '-I', cur_bam,

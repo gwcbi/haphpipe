@@ -23,11 +23,14 @@ def stageparser(parser):
 
     """
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--aln_bam', type=sysutils.existing_file, required=True,
+    group1.add_argument('--aln_bam',
+                        type=sysutils.existing_file, required=True,
                         help='Alignment file.')    
-    group1.add_argument('--ref_fa', type=sysutils.existing_file, required=True,
+    group1.add_argument('--ref_fa',
+                        type=sysutils.existing_file, required=True,
                         help='Reference fasta file.')
-    group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
+    group1.add_argument('--outdir',
+                        type=sysutils.existing_dir, default='.',
                         help='Output directory')
     
     group2 = parser.add_argument_group('Variant calling options')    
@@ -52,6 +55,7 @@ def stageparser(parser):
     group3.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
     parser.set_defaults(func=call_variants)
+
 
 def call_variants(
         aln_bam=None, ref_fa=None, outdir='.',
@@ -103,6 +107,7 @@ def call_variants(
         
     # UnifiedGenotyper
     cmd4 = [JAVA_HEAP, GATK_BIN, '-T', 'UnifiedGenotyper',
+        '--use_jdk_deflater', '--use_jdk_inflater',
         '--num_threads', '%d' % ncpu,
         '-gt_mode', 'DISCOVERY',
         '-glm', 'BOTH',

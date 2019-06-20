@@ -1,6 +1,10 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import sys
 import os
 import json
@@ -19,7 +23,7 @@ from ..utils.blastalign import load_slot_json
 from ..utils.sysutils import PipelineStepError
 
 __author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2017 Matthew L. Bendall"
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
@@ -51,30 +55,30 @@ def extract_pairwise(align_json=None, outfile=None,
     if outfmt == 'nuc_fa' or outfmt == 'prot_fa':
         jaln = load_slot_json(align_json, 'padded_alignments')
         if refreg is None:
-            for newname, alignment in jaln.iteritems():
+            for newname, alignment in list(jaln.items()):
                 nucstr = ''.join(t[2] for t in alignment if t[3] != -1)
                 nucstr = nucstr.replace('*', 'N')
-                print >>outh, '>%s' % newname                
+                print('>%s' % newname, file=outh)                
                 if outfmt == 'nuc_fa':
-                    print >>outh, wrap(nucstr)
+                    print(wrap(nucstr), file=outh)
                 else:
-                    s = Seq(nucstr[:(len(nucstr)/3)*3])
-                    print >>outh, wrap(str(s.translate()))
+                    s = Seq(nucstr[:(old_div(len(nucstr),3))*3])
+                    print(wrap(str(s.translate())), file=outh)
         else:
-            refmap = {parse_seq_id(k)['ref']:k for k in jaln.keys()}
+            refmap = {parse_seq_id(k)['ref']:k for k in list(jaln.keys())}
             chrom, ref_s, ref_e = region_to_tuple(refreg)
             ref_s = ref_s - 1
             alignment = jaln[refmap[chrom]]
             
             # Get alignment start
-            for aln_s in xrange(len(alignment)):
+            for aln_s in range(len(alignment)):
                 if alignment[aln_s][0] == ref_s:
                     break
                 while alignment[aln_s][3] == -1:
                     aln_s += 1
             
             # Get alignment end
-            for aln_e in xrange(len(alignment)-1, -1, -1):
+            for aln_e in range(len(alignment)-1, -1, -1):
                 if alignment[aln_e][0] == ref_e:
                     break
             while alignment[aln_e][3] == -1:
@@ -82,34 +86,34 @@ def extract_pairwise(align_json=None, outfile=None,
 
             nucstr = ''.join(t[2] for t in alignment[aln_s:aln_e] if t[3] != -1)
             nucstr = nucstr.replace('*', 'N')
-            print >>outh, '>%s (%s)' % (refmap[chrom], refreg)
+            print('>%s (%s)' % (refmap[chrom], refreg), file=outh)
             if outfmt == 'nuc_fa':            
-                print >>outh, wrap(nucstr)
+                print(wrap(nucstr), file=outh)
             else:
-                s = Seq(nucstr[:(len(nucstr)/3)*3])
-                print >>outh, wrap(str(s.translate()))                
+                s = Seq(nucstr[:(old_div(len(nucstr),3))*3])
+                print(wrap(str(s.translate())), file=outh)                
 
     elif outfmt == 'aln_fa':
         jaln = load_slot_json(align_json, 'padded_alignments')
-        for newname, alignment in jaln.iteritems():
+        for newname, alignment in list(jaln.items()):
             aid = parse_seq_id(newname)
             rstr = ''.join(t[1] for t in alignment).replace('*', 'N')
             qstr = ''.join(t[2] for t in alignment).replace('*', 'N')
-            print >>outh, '>ref|%s' % aid['ref']
-            print >>outh, wrap(rstr)
-            print >>outh, '>sid|%s' % aid['sid']
-            print >>outh, wrap(qstr)
+            print('>ref|%s' % aid['ref'], file=outh)
+            print(wrap(rstr), file=outh)
+            print('>sid|%s' % aid['sid'], file=outh)
+            print(wrap(qstr), file=outh)
 
     elif outfmt == 'amp_gtf':
         jgtf = load_slot_json(align_json, 'padded_gtf')
-        print >>outh, '\n'.join(_ for _ in jgtf)
+        print('\n'.join(_ for _ in jgtf), file=outh)
 
     elif outfmt == 'tsv':
         jaln = load_slot_json(align_json, 'padded_alignments')
-        for newname, alignment in jaln.iteritems():
-            print >>outh, '# %s' % newname
+        for newname, alignment in list(jaln.items()):
+            print('# %s' % newname, file=outh)
             for l in alignment:
-                print >>outh, '\t'.join(str(_) for _ in l)
+                print('\t'.join(str(_) for _ in l), file=outh)
 
 
 if __name__ == '__main__':

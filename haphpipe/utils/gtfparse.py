@@ -2,20 +2,17 @@
 """Utilities for working with GTF files
 """
 from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import object
 import re
 import sys
+
+from haphpipe.utils.helpers import cast_str
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
-def cast_str(s, dtypes=[int, float, str,]):
-    for at in dtypes:
-        try:
-            ret = at(s)
-            return ret
-        except ValueError:
-            pass
-    return str(s)
 
 class GTFRow(object):
     cols = [

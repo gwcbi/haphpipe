@@ -4,6 +4,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from builtins import map
+from builtins import range
+from builtins import object
 import sys
 import re
 import os
@@ -116,12 +119,14 @@ def assembly_stats(fh, outh=sys.stdout):
     for i,l in enumerate(contig_lengths[1:5]):
         print('rank%d\t%d' % (i+2, l), file=outh)
 
+
 def unambig_intervals(s, maxgap=30):
     """ Return unambiguous intervals of a sequence string
     
     """
     tmp = [(m.start(), m.end()) for m in re.finditer('[ACGTacgt]+', s)]
     return merge_interval_list(tmp, maxgap)
+
 
 def extract_amplicons(name, seq, maxgap=30):
     ivs = unambig_intervals(seq, maxgap)
@@ -144,13 +149,16 @@ AMBIG_MAP = {'AC': 'M',
              'ACGT': 'N'
              }
 
+
 def get_ambig(bases):
     return AMBIG_MAP[''.join(sorted(set(bases)))]
 
+
 def region_to_tuple(regstr):
     chrom = regstr.split(':')[0]
-    reg_s, reg_e = map(int, regstr.split(':')[1].split('-'))
+    reg_s, reg_e = list(map(int, regstr.split(':')[1].split('-')))
     return chrom, reg_s, reg_e
+
 
 def parse_seq_id(s, delim='|'):
     f = [_ for _ in s.split(delim) if _]
@@ -164,9 +172,10 @@ def make_seq_id(**kwargs):
     for k in keyorder:
         if k in kwargs:
             ret += '%s|%s|' % (k, kwargs.pop(k))
-    for k,v in kwargs.items():
+    for k,v in list(kwargs.items()):
         ret += '%s|%s|' % (k, v)
     return ret
+
 
 def update_seq_id(seq_id, sample_id):
     if sample_id == 'sampleXX':
@@ -174,6 +183,7 @@ def update_seq_id(seq_id, sample_id):
     d = parse_seq_id(seq_id)
     d['sid'] = sample_id
     return make_seq_id(**d)
+
 
 """
 class BedLine(object):

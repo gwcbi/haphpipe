@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+from builtins import str
+from past.builtins import basestring
 import sys
 import os
 import gzip
@@ -113,7 +115,7 @@ def command_runner(cmds, stage=None, quiet=False, logfile=None, debug=False):
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     )
     for line in p.stdout:
-        log_message(line, quiet, logfile)
+        log_message(line.decode("utf-8"), quiet, logfile)
     p.wait()
     return
 
@@ -141,7 +143,7 @@ def args_params(args):
     """ Returns a dictionary from argparse namespace
         Excludes "func" argument
     """
-    d = {k:v for k,v in vars(args).iteritems() if v is not None}
+    d = {k:v for k,v in list(vars(args).items()) if v is not None}
     if 'func' in d: d.pop('func')
     return d
 

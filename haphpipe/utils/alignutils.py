@@ -2,6 +2,11 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import zip
+from builtins import map
+from builtins import str
+from builtins import range
+from builtins import object
 import sys
 import os
 import re
@@ -245,10 +250,10 @@ class NucmerReferenceAlignment(ReferenceAlignment):
             if flag and re.match('^\d+', l):
                 aln_lines.append(l)
         """
-        self.ref_frm, self.ref_s, self.ref_e = map(int,
-                                                   [ref_frm, ref_s, ref_e])
-        self.qry_frm, self.qry_s, self.qry_e = map(int,
-                                                   [qry_frm, qry_s, qry_e])
+        self.ref_frm, self.ref_s, self.ref_e = list(map(int,
+                                                   [ref_frm, ref_s, ref_e]))
+        self.qry_frm, self.qry_s, self.qry_e = list(map(int,
+                                                   [qry_frm, qry_s, qry_e]))
         aln_lines = [l for l in aln_report if re.match('^\d+', l)]
         self.load_alignment(
             ''.join(
@@ -261,17 +266,17 @@ class NucmerReferenceAlignment(ReferenceAlignment):
         self.adjust_ref_start(self.ref_s - 1)
 
 
-class TilingRow:
+class TilingRow(object):
     """ Alignment specification from show-tiling (mummer)
     """
 
     def __init__(self, l, seqdict=None):
         fields = l.strip('\n').split('\t')
-        self.ref_s, self.ref_e, self.qry_s, self.qry_e = map(int, fields[:4])
-        self.ref_alen, self.qry_alen = map(int, fields[4:6])
+        self.ref_s, self.ref_e, self.qry_s, self.qry_e = list(map(int, fields[:4]))
+        self.ref_alen, self.qry_alen = list(map(int, fields[4:6]))
         self.pid = float(fields[6])
-        self.ref_len, self.qry_len = map(int, fields[7:9])
-        self.ref_cov, self.qry_cov = map(float, fields[9:11])
+        self.ref_len, self.qry_len = list(map(int, fields[7:9]))
+        self.ref_cov, self.qry_cov = list(map(float, fields[9:11]))
         self.ref, self.qry = fields[11:]
         if seqdict is not None:
             self.add_seq(seqdict)
@@ -400,7 +405,8 @@ def parse_show_aligns(out):
     """ Returns show_aligns """
     flag = False
     cur_report = None
-    for l in out.strip('\n').split('\n'):
+    outlines = out.decode('utf-8').strip('\n').split('\n')
+    for l in outlines:
         if re.match('^--\s+BEGIN', l):
             cur_report = []
         if cur_report is not None:

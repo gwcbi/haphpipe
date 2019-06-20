@@ -1,5 +1,10 @@
 #! /usr/bin/env python
 
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import argparse
 import sys
 from Bio import SeqIO
@@ -25,11 +30,11 @@ for s in SeqIO.parse(args.input, 'fasta'):
   seqs.append(s)
   
 freqs = [float(s.description.split()[1].split('=')[1]) for s in seqs]
-freqs = [f/sum(freqs) for f in freqs] 
+freqs = [old_div(f,sum(freqs)) for f in freqs] 
   
 if len(seqs) != len(freqs):
     equal_len = False
-    print "Length of sequences is not the same as length of frequencies. Something is wrong."
+    print("Length of sequences is not the same as length of frequencies. Something is wrong.")
 else:
     pass
 
@@ -48,7 +53,7 @@ if len(freqs) == len(cumfreq):
 if len(fasta) == args.num:
   fafile = open(args.out, 'w')
   for i,seq in enumerate(fasta):
-    print >>fafile, '>%s.%05d %s' % (seq.description.split()[0], i, seq.description.split()[1])
-    print >>fafile, '%s' % str(seq.seq)
+    print('>%s.%05d %s' % (seq.description.split()[0], i, seq.description.split()[1]), file=fafile)
+    print('%s' % str(seq.seq), file=fafile)
 
-  print >>sys.stderr, "FASTA file comprised of %s sequences is completed for %s." %(args.num, args.input)
+  print("FASTA file comprised of %s sequences is completed for %s." %(args.num, args.input), file=sys.stderr)

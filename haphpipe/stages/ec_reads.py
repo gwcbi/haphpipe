@@ -115,7 +115,7 @@ def ec_reads(
         sysutils.PipelineStepError("YAML file %s not found" % yaml_file)
 
     with open(yaml_file, 'rU') as fh:
-        d = yaml.load(fh)[0]
+        d = yaml.load(fh, Loader=yaml.FullLoader)[0]
     cmds = []
     if 'left reads' in d:
         cmds.append(
