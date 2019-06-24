@@ -63,12 +63,19 @@ pip install git+git://github.com/gwcbi/haphpipe.git
 
 ##### `haphpipe_assemble_01`
 
+This pipeline implements amplicon assembly using a denovo approach. Reads are
+error-corrected and used to refine the initial assembly, with up to 5
+refinement steps.
 
+##### `haphpipe_assemble_02`
 
+This pipeline implements amplicon assembly using a reference-based mapping 
+approach. Reads are error-corrected and used to refine the initial assembly,
+with up to 5 refinement steps.
 
 ## Stages
 
-Each stage can be run on its own. Stages are grouped into categories...
+Each stage can be run on its own. Stages are grouped into 4 categories: hp_reads, hp_assemble, hp_annotate, and hp_haplotype.
 More detailed description of command line options for each stage are available in the [wiki](https://github.com/gwcbi/haphpipe/wiki).
 
 [TODO] Finish describing each haphpipe stage. 
