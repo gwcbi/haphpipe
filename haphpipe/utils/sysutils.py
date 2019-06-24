@@ -62,7 +62,10 @@ def determine_dependency_path(choices):
 
 def log_message(msg, quiet, logfile):
     if not quiet:
-        sys.stderr.write(msg.encode('utf-8'))
+        try:
+            sys.stderr.write(msg.encode('utf-8')) # python2
+        except TypeError:
+            sys.stderr.write(msg)  # python3
     if logfile is not None:
         try:
             logfile.write(msg.encode('utf-8')) # python2
