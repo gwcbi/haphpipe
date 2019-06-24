@@ -86,19 +86,19 @@ Manipulate reads. Input is reads in fastq format, output is modified reads in fa
 
 ##### hp_sample_reads
 
-Subsample reads using seqtk. Input is reads in fastq format. Options are the number of reads to sample, fraction of reads to sample (between 0 and 1), and seed. Output is sampled reads in fastq format.
+Subsample reads using seqtk. Input is reads in fastq format. Options are the number of reads to sample, fraction of reads to sample (between 0 and 1), and seed. Output is sampled reads in fastq format (.fastq).
 
 ##### hp_trim_reads
 
-Trim reads using Trimmomatic. Input is reads in fastq format. Options are adapter file, trimmers, and encoding. Output is trimmed reads in fastq format.
+Trim reads using Trimmomatic. Input is reads in fastq format. Options are adapter file, trimmers, and encoding. Output is trimmed reads in fastq format (.fastq).
 
 ##### hp_join_reads
 
-Join reads using FLASH. Input is reads in fastq format. Output is joined reads in fastq format.
+Join reads using FLASH. Input is reads in fastq format. Output is joined reads in fastq format (.fastq).
 
 ##### hp_ec_reads
 
-Error correction using spades. Input is reads in fastq format. Output is error-corrected reads in fastq format.
+Error correction using spades. Input is reads in fastq format. Output is error-corrected reads in fastq format (.fastq).
 
 ### hp_assemble
 
@@ -108,17 +108,16 @@ Resulting consensus can be further refined.
 
 ##### hp_assemble_denovo
 
-Assemble reads using denovo assembly. Input is reads in FASTQ format. Output is contigs in FNA format.
+Assemble reads using denovo assembly. Input is reads in FASTQ format. Output is contigs in FNA format (.fna).
 
 ##### hp_assemble_amplicons
 
 
 ##### hp_assemble_scaffold
 
-Scaffold contigs using reference sequence. Input is contigs in FNA format and reference sequence in FASTA format. Output is scaffold assembly, alligned scaffold, imputed scaffold, and padded scaffold all in FASTA format (.fa extension).
+Scaffold contigs using reference sequence. Input is contigs in FNA format and reference sequence in FASTA format. Output is scaffold assembly, alligned scaffold, imputed scaffold, and padded scaffold all in FASTA format (.fa).
 
 ##### hp_align_reads
-
 
 ##### hp_call_variants
 
