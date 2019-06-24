@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+###############################################################################
+# Example pipeline implementing amplicon assembly using a reference-based
+# denovo approach. Reads are error-corrected and aligned to provided reference
+# with two refinement steps.
+###############################################################################
+SN=$(basename $0)
+
+
+read -r -d '' USAGE <<EOF
+USAGE:
+$SN [read1] [read2] [reference_fasta] [reference_gtf] <outdir>
+
+----- HAPHPIPE assembly pipeline 02 -----
+
+This pipeline implements amplicon assembly using a denovo approach. Reads are
+error-corrected and used to refine the initial assembly, with up to 5
+refinement steps.
+
+Input:
+read1:             Fastq file for read 1. May be compressed (.gz)
+read2:             Fastq file for read 2. May be compressed (.gz)
+reference_fasta:   Reference sequence (fasta)
+reference_gtf:     Amplicon regions (GTF)
+outdir:            Output directory (default is sample_dir/$SN)
+
+EOF
+
+#--- Read command line args
+[[ -n "$1" ]] && [[ "$1" == '-h' ]] && echo "$USAGE" && exit 0
+
+[[ -n "$1" ]] && raw1="$1"
+[[ -n "$2" ]] && raw2="$2"
+[[ -n "$3" ]] && refFA="$3"
+[[ -n "$4" ]] && refGTF="$4"
+[[ -n "$5" ]] && outdir="$5"
+
+[[ -z ${raw1+x} ]] && echo "FAILED: read1 is not set" && echo "$USAGE" && exit 1
+[[ ! -e "$raw1" ]] && echo "[---$SN---] ($(date)) FAILED: file $raw1 does not exist" && exit 1
+
+[[ -z ${raw2+x} ]] && echo "FAILED: read2 is not set" && echo "$USAGE" && exit 1
+[[ ! -e "$raw2" ]] && echo "[---$SN---] ($(date)) FAILED: file $raw2 does not exist" && exit 1
+
+[[ -z ${refFA+x} ]] && echo "FAILED: refFA is not set" && echo "$USAGE" && exit 1
+[[ ! -e "$refFA" ]] && echo "[---$SN---] ($(date)) FAILED: file $refFA does not exist" && exit 1
+
+[[ -z ${refGTF+x} ]] && echo "FAILED: refGTF is not set" && echo "$USAGE" && exit 1
+[[ ! -e "$refGTF" ]] && echo "[---$SN---] ($(date)) FAILED: file $refGTF does not exist" && exit 1
+
+
+[[ -z ${outdir+x} ]] && outdir=$(dirname $raw1)/$SN
+mkdir -p $outdir
+
+#--- Determine CPUs to use
+# First examines NCPU environment variable, then nproc, finally sets to  1
+[[ -n "$NCPU" ]] && ncpu=$NCPU
+[[ -z $ncpu ]] && ncpu=$(nproc 2> /dev/null)
+[[ -z $ncpu ]] && ncpu=1
+
+#--- Determine whether verbose
+[[ -n "$VERBOSE" ]] && quiet="" || quiet='--quiet'
+
+echo "[---$SN---] ($(date)) read1:             $raw1"
+echo "[---$SN---] ($(date)) read2:             $raw2"
+echo "[---$SN---] ($(date)) reference_fasta:   $refFA"
+echo "[---$SN---] ($(date)) reference_gtf:     $refGTF"
+echo "[---$SN---] ($(date)) outdir:            $outdir"
+echo "[---$SN---] ($(date)) num CPU:           $ncpu"
+
+#--- Start the timer
+t1=$(date +"%s")

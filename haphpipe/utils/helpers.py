@@ -5,6 +5,8 @@ from __future__ import absolute_import
 from builtins import next
 from builtins import str
 from builtins import zip
+from past.builtins import basestring
+
 import math
 from itertools import tee
 try:
@@ -75,6 +77,7 @@ def guess_encoding(fh, nsamp=100):
 
     for i,l in enumerate(fh):
         if i % 4 == 3:
+            l = l.decode('utf-8') if isinstance(l, bytes) else l
             """ Solexa+64 can be as low as -5, so if there are any ASCII characters below
                 59 (64-5), it is definitely phred-33.
                 chr(64-5) == ';'

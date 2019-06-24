@@ -93,3 +93,4 @@ ENV/
 
 # GATK jar files
 GenomeAnalysisTK*
+haphpipe/test

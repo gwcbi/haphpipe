@@ -8,9 +8,8 @@ setuptools.setup(name='haphpipe',
       author_email='bendall@gwu.edu',
       packages=setuptools.find_packages(),
       scripts=[
-          'bin/haphpipe_asm.sh',
-          'bin/haphpipe_predicthaplo.sh',
-          'bin/haphpipe_amp.sh',
+          'bin/haphpipe_assemble_01',
+          'bin/haphpipe_assemble_02',
       ],
       entry_points={
           'console_scripts': [
