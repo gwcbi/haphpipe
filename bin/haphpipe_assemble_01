@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
 ###############################################################################
-# Example pipeline
-#
+# Example pipeline implementing amplicon assembly using a denovo approach. 
+# Reads are error-corrected and used to refine the initial assembly, with up 
+# to 5 refinement steps.
 ###############################################################################
 SN=$(basename $0)
 
 
 read -r -d '' USAGE <<EOF
 USAGE:
-$SN [read1] [read2] [reference_fasta] [reference_gtf] <outdir>
+$SN [read1] [read2] [reference_fasta] [reference_gtf] [samp_id] <outdir>
 
 ----- HAPHPIPE assembly pipeline 01 -----
 
@@ -22,7 +23,8 @@ read1:             Fastq file for read 1. May be compressed (.gz)
 read2:             Fastq file for read 2. May be compressed (.gz)
 reference_fasta:   Reference sequence (fasta)
 reference_gtf:     Amplicon regions (GTF)
-outdir:            Output directory (default is sample_dir/$SN)
+samp_id:           Sample ID
+outdir:            Output directory (default is [sample_dir]/$SN)
 
 EOF
 
@@ -33,7 +35,8 @@ EOF
 [[ -n "$2" ]] && raw2="$2"
 [[ -n "$3" ]] && refFA="$3"
 [[ -n "$4" ]] && refGTF="$4"
-[[ -n "$5" ]] && outdir="$5"
+[[ -n "$5" ]] && sampid="$5"
+[[ -n "$6" ]] && outdir="$6"
 
 [[ -z ${raw1+x} ]] && echo "FAILED: read1 is not set" && echo "$USAGE" && exit 1
 [[ ! -e "$raw1" ]] && echo "[---$SN---] ($(date)) FAILED: file $raw1 does not exist" && exit 1
@@ -47,6 +50,7 @@ EOF
 [[ -z ${refGTF+x} ]] && echo "FAILED: refGTF is not set" && echo "$USAGE" && exit 1
 [[ ! -e "$refGTF" ]] && echo "[---$SN---] ($(date)) FAILED: file $refGTF does not exist" && exit 1
 
+[[ -z ${sampid+x} ]] && echo "FAILED: sampid is not set" && echo "$USAGE" && exit 1
 
 [[ -z ${outdir+x} ]] && outdir=$(dirname $raw1)/$SN
 mkdir -p $outdir
@@ -64,6 +68,7 @@ echo "[---$SN---] ($(date)) read1:             $raw1"
 echo "[---$SN---] ($(date)) read2:             $raw2"
 echo "[---$SN---] ($(date)) reference_fasta:   $refFA"
 echo "[---$SN---] ($(date)) reference_gtf:     $refGTF"
+echo "[---$SN---] ($(date)) samp_id:           $sampid"
 echo "[---$SN---] ($(date)) outdir:            $outdir"
 echo "[---$SN---] ($(date)) num CPU:           $ncpu"
 
@@ -153,11 +158,12 @@ if [[ -e ${outdir}/amplicon_assembly.fna ]]; then
 else
     read -r -d '' cmd <<EOF
 hp_assemble_amplicons\
-  --contigs_fa ${outdir}/denovo_contigs.fna\
-  --ref_fa ${refFA}\
-  --ref_gtf ${refGTF}\
-  ${quiet} --logfile ${outdir}/haphpipe.out\
-  --outdir ${outdir}
+ --contigs_fa ${outdir}/denovo_contigs.fna\
+ --ref_fa ${refFA}\
+ --ref_gtf ${refGTF}\
+ --sample_id ${sampid}\
+ ${quiet} --logfile ${outdir}/haphpipe.out\
+ --outdir ${outdir}
 EOF
     echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
     eval $cmd
@@ -181,6 +187,7 @@ hp_refine_assembly\
  --fq1 ${outdir}/corrected_1.fastq\
  --fq2 ${outdir}/corrected_2.fastq\
  --ref_fa ${outdir}/amplicon_assembly.fna\
+ --sample_id ${sampid}\
  --max_step 5\
  ${quiet} --logfile ${outdir}/haphpipe.out\
  --outdir ${outdir}
@@ -206,7 +213,7 @@ hp_finalize_assembly\
  --ncpu $ncpu\
  --fq1 ${outdir}/corrected_1.fastq\
  --fq2 ${outdir}/corrected_2.fastq\
- --sample_id PL01\
+ --sample_id ${sampid}\
  --ref_fa ${outdir}/refined.fna\
  ${quiet} --logfile ${outdir}/haphpipe.out\
  --outdir ${outdir}
