@@ -161,6 +161,8 @@ def region_to_tuple(regstr):
 
 
 def parse_seq_id(s, delim='|'):
+    if delim not in s:
+        return {'ref': s}
     f = [_ for _ in s.split(delim) if _]
     return {f[i]:f[i+1] for i in range(0, len(f), 2)}
 
@@ -177,12 +179,22 @@ def make_seq_id(**kwargs):
     return ret
 
 
-def update_seq_id(seq_id, sample_id):
+def update_seq_id(seq_id, sample_id, delim='|'):
     if sample_id == 'sampleXX':
         return seq_id
     d = parse_seq_id(seq_id)
     d['sid'] = sample_id
     return make_seq_id(**d)
+
+
+def seqid_match(sid1, sid2):
+    ''' Return true if sequence IDs indicate same reference (ref+region)'''
+    d1 = parse_seq_id(sid1)
+    d2 = parse_seq_id(sid2)
+    if 'reg' in d1 and 'reg' in d2:
+        return (d1['reg'] == d2['reg']) and (d1['ref'] == d2['ref'])
+    else:
+        return (d1['ref'] == d2['ref'])
 
 
 """

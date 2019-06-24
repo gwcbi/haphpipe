@@ -2,27 +2,27 @@
 
 ###############################################################################
 # Example pipeline implementing amplicon assembly using a reference-based
-# denovo approach. Reads are error-corrected and aligned to provided reference
-# with two refinement steps.
+# approach. Reads are error-corrected and aligned to provided amplicon
+# reference with two refinement steps.
 ###############################################################################
 SN=$(basename $0)
 
 
 read -r -d '' USAGE <<EOF
 USAGE:
-$SN [read1] [read2] [reference_fasta] [reference_gtf] <outdir>
+$SN [read1] [read2] [amplicons_fasta] [samp_id] <outdir>
 
 ----- HAPHPIPE assembly pipeline 02 -----
 
-This pipeline implements amplicon assembly using a denovo approach. Reads are
-error-corrected and used to refine the initial assembly, with up to 5
+This pipeline implements amplicon assembly using a reference-based approach.
+Reads are error-corrected and aligned to provided amplicon reference with two
 refinement steps.
 
 Input:
 read1:             Fastq file for read 1. May be compressed (.gz)
 read2:             Fastq file for read 2. May be compressed (.gz)
-reference_fasta:   Reference sequence (fasta)
-reference_gtf:     Amplicon regions (GTF)
+amplicons_fasta:   Amplicon reference sequence (fasta)
+samp_id:           Sample ID
 outdir:            Output directory (default is sample_dir/$SN)
 
 EOF
@@ -32,8 +32,8 @@ EOF
 
 [[ -n "$1" ]] && raw1="$1"
 [[ -n "$2" ]] && raw2="$2"
-[[ -n "$3" ]] && refFA="$3"
-[[ -n "$4" ]] && refGTF="$4"
+[[ -n "$3" ]] && ampFA="$3"
+[[ -n "$4" ]] && sampid="$4"
 [[ -n "$5" ]] && outdir="$5"
 
 [[ -z ${raw1+x} ]] && echo "FAILED: read1 is not set" && echo "$USAGE" && exit 1
@@ -42,12 +42,10 @@ EOF
 [[ -z ${raw2+x} ]] && echo "FAILED: read2 is not set" && echo "$USAGE" && exit 1
 [[ ! -e "$raw2" ]] && echo "[---$SN---] ($(date)) FAILED: file $raw2 does not exist" && exit 1
 
-[[ -z ${refFA+x} ]] && echo "FAILED: refFA is not set" && echo "$USAGE" && exit 1
-[[ ! -e "$refFA" ]] && echo "[---$SN---] ($(date)) FAILED: file $refFA does not exist" && exit 1
+[[ -z ${ampFA+x} ]] && echo "FAILED: ampFA is not set" && echo "$USAGE" && exit 1
+[[ ! -e "$ampFA" ]] && echo "[---$SN---] ($(date)) FAILED: file $ampFA does not exist" && exit 1
 
-[[ -z ${refGTF+x} ]] && echo "FAILED: refGTF is not set" && echo "$USAGE" && exit 1
-[[ ! -e "$refGTF" ]] && echo "[---$SN---] ($(date)) FAILED: file $refGTF does not exist" && exit 1
-
+[[ -z ${sampid+x} ]] && echo "FAILED: sampid is not set" && echo "$USAGE" && exit 1
 
 [[ -z ${outdir+x} ]] && outdir=$(dirname $raw1)/$SN
 mkdir -p $outdir
@@ -70,3 +68,111 @@ echo "[---$SN---] ($(date)) num CPU:           $ncpu"
 
 #--- Start the timer
 t1=$(date +"%s")
+
+###############################################################################
+# Step 1: Trim reads.
+###############################################################################
+stage="trim_reads"
+echo -e "\n[---$SN---] ($(date)) Stage: $stage"
+
+if [[ -e $outdir/trimmed_1.fastq && -e ${outdir}/trimmed_2.fastq ]]; then
+    echo "[---$SN---] ($(date)) EXISTS: $stage trimmed_1.fastq,trimmed_2.fastq"
+else
+    read -r -d '' cmd <<EOF
+hp_reads trim_reads\
+ --ncpu $ncpu\
+ --fq1 $raw1\
+ --fq2 $raw2\
+ ${quiet} --logfile ${outdir}/haphpipe.out\
+ --outdir ${outdir}
+EOF
+    echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
+    eval $cmd
+
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+fi
+
+###############################################################################
+# Step 2: Error correction using Spades
+###############################################################################
+stage="ec_reads"
+echo -e "\n[---$SN---] ($(date)) Stage: $stage"
+
+if [[ -e $outdir/corrected_1.fastq && -e $outdir/corrected_2.fastq ]]; then
+    echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
+else
+    read -r -d '' cmd <<EOF
+hp_reads ec_reads\
+ --ncpu $ncpu\
+ --fq1 ${outdir}/trimmed_1.fastq\
+ --fq2 ${outdir}/trimmed_2.fastq\
+ ${quiet} --logfile ${outdir}/haphpipe.out\
+ --outdir ${outdir}
+EOF
+    echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
+    eval $cmd
+
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+fi
+
+###############################################################################
+# Step 3: Refine assembly
+###############################################################################
+stage="refine_assembly"
+echo -e "\n[---$SN---] ($(date)) Stage: $stage"
+
+if [[ -e ${outdir}/refined.fna ]]; then
+    echo "[---$SN---] ($(date)) EXISTS: $stage refined.fna"
+else
+    read -r -d '' cmd <<EOF
+hp_refine_assembly\
+ --ncpu $ncpu\
+ --fq1 ${outdir}/corrected_1.fastq\
+ --fq2 ${outdir}/corrected_2.fastq\
+ --ref_fa ${ampFA}\
+ --sample_id ${sampid}\
+ --max_step 2\
+ ${quiet} --logfile ${outdir}/haphpipe.out\
+ --outdir ${outdir}
+EOF
+    echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
+    eval $cmd
+
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+fi
+
+###############################################################################
+# Step 4: Finalize assembly
+###############################################################################
+stage="finalize_assembly"
+echo -e "\n[---$SN---] ($(date)) Stage: $stage"
+
+if [[ -e ${outdir}/final.fna && -e ${outdir}/final.bam && -e ${outdir}/final.vcf.gz ]]; then
+    echo "[---$SN---] ($(date)) EXISTS: $stage final.fna,final.bam,final.vcf.gz"
+else
+    read -r -d '' cmd <<EOF
+hp_finalize_assembly\
+ --ncpu $ncpu\
+ --fq1 ${outdir}/corrected_1.fastq\
+ --fq2 ${outdir}/corrected_2.fastq\
+ --sample_id ${sampid}\
+ --ref_fa ${outdir}/refined.fna\
+ ${quiet} --logfile ${outdir}/haphpipe.out\
+ --outdir ${outdir}
+EOF
+    echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
+    eval $cmd
+
+    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+        (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+fi
+
+
+#---Complete job
+t2=$(date +"%s")
+diff=$(($t2-$t1))
+echo "[---$SN---] ($(date)) $(($diff / 60)) minutes and $(($diff % 60)) seconds elapsed."
+echo "[---$SN---] ($(date)) $SN COMPLETE."

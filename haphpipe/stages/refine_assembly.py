@@ -18,6 +18,7 @@ from Bio import SeqIO
 from Bio import pairwise2
 
 from haphpipe.utils import sysutils
+from haphpipe.utils import sequtils
 from haphpipe.stages import align_reads
 from haphpipe.stages import call_variants
 from haphpipe.stages import vcf_to_consensus
@@ -187,8 +188,15 @@ def progressive_refine_assembly(
         new_seqs = {s.id: s for s in SeqIO.parse(tmp_refined, 'fasta')}
         diffs = []
         for sid in seq_ids:
+            # Identify which sequences should be compared
+            poss1 = [k for k in new_seqs.keys() if sequtils.seqid_match(sid, k)]
+            assert len(poss1) == 1
+            s1 = new_seqs[poss1[0]].seq
+            poss2 = [k for k in cur_seqs.keys() if sequtils.seqid_match(sid, k)]
+            assert len(poss2) == 1
+            s2 = cur_seqs[poss2[0]].seq
             alns = pairwise2.align.globalms(
-                new_seqs[sid].seq, cur_seqs[sid].seq, 2, -1, -3, -1
+                s1, s2, 2, -1, -3, -1
             )
             d = min(sum(nc != cc for nc, cc in zip(t[0], t[1])) for t in alns)
             diffs.append(d)
