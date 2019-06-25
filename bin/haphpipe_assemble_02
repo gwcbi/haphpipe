@@ -15,8 +15,8 @@ $SN [read1] [read2] [amplicons_fasta] [samp_id] <outdir>
 ----- HAPHPIPE assembly pipeline 02 -----
 
 This pipeline implements amplicon assembly using a reference-based approach.
-Reads are error-corrected and aligned to provided amplicon reference with two
-refinement steps.
+Reads are error-corrected and aligned to provided amplicon reference with up to
+five refinement steps.
 
 Input:
 read1:             Fastq file for read 1. May be compressed (.gz)
@@ -133,7 +133,7 @@ hp_refine_assembly\
  --fq2 ${outdir}/corrected_2.fastq\
  --ref_fa ${ampFA}\
  --sample_id ${sampid}\
- --max_step 2\
+ --max_step 5\
  ${quiet} --logfile ${outdir}/haphpipe.out\
  --outdir ${outdir}
 EOF
