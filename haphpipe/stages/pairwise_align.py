@@ -12,8 +12,6 @@ from collections import defaultdict
 
 from Bio import SeqIO
 
-#from ..utils.helpers import overlaps
-
 from haphpipe.utils import sysutils
 from haphpipe.utils import sequtils
 from haphpipe.utils import gtfparse
@@ -24,6 +22,16 @@ from haphpipe.utils import blastalign as baln
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
+
+def matching_refseq(refseqs, k):
+    if k in refseqs:
+        return refseqs[k]
+    else:
+        if len(refseqs) > 1:
+            msg = 'No match for "%s" in reference sequences (%s)'
+            msg = msg % (k, ','.join(refseqs.keys()))
+            raise sysutils.PipelineStepError(msg)
+        return next(iter(refseqs.values()))
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
@@ -42,9 +50,6 @@ def stageparser(parser):
     group1.add_argument('--outdir',
                         type=sysutils.existing_dir, default='.',
                         help='Output directory')
-    # group2 = parser.add_argument_group('Pairwise alignment options')
-    # group2.add_argument('--seqname',
-    #                     help='Name to append to sequences.')
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--keep_tmp', action='store_true',
                         help='Do not delete temporary directory')
@@ -101,13 +106,18 @@ def pairwise_align(
         'padded_alignments': {},
         'padded_gtf': [],
     }
-    all_nuc_aln = defaultdict(list) # {(sid, ref): [(reg, list(alignment)), ...], ...}
-    
+    # {(sid, ref): [(reg, list(alignment)), ...], ...}
+    all_nuc_aln = defaultdict(list)
+
     for amprec in SeqIO.parse(amplicons_fa, 'fasta'):
         # Get amplicon reference and region from sequence ID
         aid = sequtils.parse_seq_id(amprec.id)
         # Find the GTF line used to orient this amplicon
-        gl = ampdict[(aid['ref'], aid['reg'])]
+        try:
+            gl = ampdict[(aid['ref'], aid['reg'])]
+        except KeyError:
+            poss_gl = [t for t in ampdict.keys() if t[1] == aid['reg']]
+            gl = ampdict[poss_gl[0]]
 
         # Start and stop for primary coding region
         pri_s = int(gl.attrs['primary_cds'].split('-')[0]) - 1
@@ -119,12 +129,14 @@ def pairwise_align(
                 altcds.append(((int(x.split('-')[0]) - 1), int(x.split('-')[1])))
         
         # Align using amino acids
+        refseq = matching_refseq(refseqs, aid['ref'])
         alnobj, nuc_aln = baln.alignAA(
-            refseqs[aid['ref']],
+            refseq,
             amprec,
             (pri_s, pri_e),
             altcds,
-            tempdir
+            tempdir,
+            quiet
         )
         # prialn is a BlastxAlignment object with amplicon aligned to primary cds
         # merged is a nucleotide alignment over the full amplicon, with unaligned regions
@@ -137,8 +149,9 @@ def pairwise_align(
     
     # Full sequence with padding
     for sid, ref in list(all_nuc_aln.keys()):
+        _refseq = matching_refseq(refseqs, ref)
         # New name and new alignment
-        newname = 'sid|%s|ref|%s' % (sid, ref)
+        newname = 'sid|%s|ref|%s|' % (sid, _refseq.id)
         tmp = []
         # Sort all segments by the start position
         segments = sorted(all_nuc_aln[(sid, ref)], key=lambda x:x[1][0][0])
@@ -152,7 +165,7 @@ def pairwise_align(
             # Pad up to first position of segment
             if rpos < seg[0][0]:
                 for p in range(rpos, seg[0][0]):
-                    tmp.append((p, str(refseqs[ref].seq[p]), '*', qpos))
+                    tmp.append((p, str(_refseq.seq[p]), '*', qpos))
                     qpos += 1
             gr.start = qpos + 1
             for t in seg:
@@ -173,19 +186,22 @@ def pairwise_align(
             rpos = seg[-1][0] + 1
         
         # Add padding for end of sequence
-        if rpos < len(refseqs[ref].seq):
-            for p in range(rpos, len(refseqs[ref].seq)):
-                tmp.append((p, str(refseqs[ref].seq[p]), '*', qpos))
+        if rpos < len(_refseq.seq):
+            for p in range(rpos, len(_refseq.seq)):
+                tmp.append((p, str(_refseq.seq[p]), '*', qpos))
                 qpos += 1
         
         # Validate the alignment
         vseq = ''.join(t[2] for t in tmp if t[3] != -1)
-        if baln.validate_alignment(tmp, refseqs[ref].seq, vseq):
-            print('%s alignment validation passed' % newname, file=sys.stderr)
+        if baln.validate_alignment(tmp, _refseq.seq, vseq):
+            if not quiet:
+                print('%s alignment validation passed' % newname,
+                      file=sys.stderr)
             out_json['padded_alignments'][newname] = tmp
     
     for s in out_json['padded_gtf']:
-        print(s, file=sys.stdout)
+        if not quiet:
+            print(s, file=sys.stdout)
     
     with open(out_aln, 'w') as outh:
         print(json.dumps(out_json), file=outh)

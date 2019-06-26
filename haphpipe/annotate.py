@@ -21,12 +21,15 @@ def main():
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     sub = parser.add_subparsers(
-        help='''Annotate consensus
+        help='''Annotate consensus sequence(s). An assembled consensus sequence
+                can be amino acid aligned to a reference (i.e. HXB2) so the
+                same coordinate system can be used. Sequences can then be
+                extracted based on the shared coordinate systems.
              '''
     )
     pairwise_align.stageparser(sub.add_parser('pairwise_align'))
-    post_assembly.stageparser(sub.add_parser('post_assembly'))
     extract_pairwise.stageparser(sub.add_parser('extract_pairwise'))
+    post_assembly.stageparser(sub.add_parser('post_assembly'))
     annotate_from_ref.stageparser(sub.add_parser('annotate_from_ref'))
 
     args = parser.parse_args()

@@ -29,7 +29,7 @@ class BlastxAlignment(object):
         self.aa_align = []
         self.nuc_align = []
         
-        jobj = self.run_blast(showaln=True, workdir=workdir)
+        jobj = self.run_blast(showaln=False, workdir=workdir)
         self.parse_alignment(jobj)
     
     def run_blast(self, showaln=True, workdir="."):
@@ -50,7 +50,7 @@ class BlastxAlignment(object):
                         '-subject', sfile,
                        ], stdout=PIPE, stderr=PIPE)
             o,e = p0.communicate()
-            print(o, file=sys.stdout)
+            print(o.decode('utf-8'), file=sys.stdout)
         
         p = Popen(['blastx',
                    '-query', qfile,
@@ -157,7 +157,7 @@ def nuc_align_insert(merged, mr, refseq, qryseq):
     qry_s, qry_e = merged[mr-1][3]+1, merged[mr][3]-1
     alns = pairwise2.align.globalms(refseq[ref_s:ref_e+1], qryseq[qry_s:qry_e+1], 2, -1, -10, -1)
     best = alns[0]
-    print(pairwise2.format_alignment(*best), file=sys.stdout)
+    # print(pairwise2.format_alignment(*best), file=sys.stdout)
     insert = aligned_seqs_to_list(best[0], best[1], ref_s, qry_s)
     return insert
 
@@ -172,7 +172,7 @@ def nuc_align_head(merged, refseq, qryseq):
     ref_s = ref_e - (qry_e - qry_s)
     alns = pairwise2.align.globalms(refseq[ref_s:ref_e], qryseq[qry_s:qry_e], 2, -1, -10, -1)
     best = alns[0]
-    print(pairwise2.format_alignment(*best), file=sys.stdout)
+    # print(pairwise2.format_alignment(*best), file=sys.stdout)
     head = aligned_seqs_to_list(best[0], best[1], ref_s, qry_s)
     # Trim off query gaps at the end
     while head[0][2] == '-':
@@ -190,7 +190,7 @@ def nuc_align_tail(merged, refseq, qryseq):
     ref_e = ref_s + (qry_e - qry_s)
     alns = pairwise2.align.globalms(refseq[ref_s:ref_e+1], qryseq[qry_s:qry_e+1], 2, -1, -10, -1)
     best = alns[0]
-    print(pairwise2.format_alignment(*best), file=sys.stdout)
+    # print(pairwise2.format_alignment(*best), file=sys.stdout)
     tail = aligned_seqs_to_list(best[0], best[1], ref_s, qry_s)
     # Trim off query gaps at the end
     while tail[-1][2] == '-':
@@ -257,7 +257,7 @@ def load_slot_json(infile, slotname='padded_alignments'):
     return jobj[slotname]
 
 
-def alignAA(refrec, qryrec, cds, altcds=list(), workdir="."):
+def alignAA(refrec, qryrec, cds, altcds=list(), workdir=".", quiet=False):
     ''' Perform blastx alignment
     
         Use blastx to align translated nucleotide query to protein reference. The user
@@ -318,6 +318,7 @@ def alignAA(refrec, qryrec, cds, altcds=list(), workdir="."):
     merged = merged + t
     
     if validate_alignment(merged, ref, qry):
-        print("Alignment validation passed", file=sys.stderr)
+        if not quiet:
+            print("Alignment validation passed", file=sys.stderr)
     
     return bxa, merged

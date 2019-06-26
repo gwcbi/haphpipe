@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
@@ -6,19 +7,19 @@ from builtins import str
 from builtins import range
 from past.utils import old_div
 import sys
-import os
-import json
+# import os
+# import json
 import argparse
-from subprocess import check_output
-from collections import defaultdict
+# from subprocess import check_output
+# from collections import defaultdict
 
-from Bio import SeqIO
+# from Bio import SeqIO
 from Bio.Seq import Seq
 
-from ..utils.sysutils import existing_file, args_params
-from ..utils.sequtils import wrap, parse_seq_id, region_to_tuple
-from ..utils.gtfparse import gtf_parser, GTFRow
-from ..utils.blastalign import load_slot_json
+from haphpipe.utils import sysutils
+from haphpipe.utils import sequtils
+# from haphpipe.utils.gtfparse import gtf_parser, GTFRow
+from haphpipe.utils.blastalign import load_slot_json
 
 from ..utils.sysutils import PipelineStepError
 
@@ -27,9 +28,10 @@ __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--align_json', type=existing_file, required=True,
-                        help='''JSON file describing alignment (output of pairwise_align
-                                stage)''')
+    group1.add_argument('--align_json', type=sysutils.existing_file,
+                        required=True,
+                        help='''JSON file describing alignment (output of
+                                pairwise_align stage)''')
     group1.add_argument('--outfile',
                         help='''Output file. Default is stdout''')
     group2 = parser.add_argument_group('Extract pairwise options')                                
@@ -38,7 +40,10 @@ def stageparser(parser):
                                   'prot_fa', ],
                         help='Format for output')
     group2.add_argument('--refreg',
-                        help='''Reference region''')
+                        help='''Reference region. String format is
+                                ref:start-stop. For example, the region string
+                                to extract pol when aligned to HXB2 is
+                                HIV_B.K03455.HXB2:2085-5096''')
 
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--debug', action='store_true',
@@ -60,13 +65,13 @@ def extract_pairwise(align_json=None, outfile=None,
                 nucstr = nucstr.replace('*', 'N')
                 print('>%s' % newname, file=outh)                
                 if outfmt == 'nuc_fa':
-                    print(wrap(nucstr), file=outh)
+                    print(sequtils.wrap(nucstr), file=outh)
                 else:
                     s = Seq(nucstr[:(old_div(len(nucstr),3))*3])
-                    print(wrap(str(s.translate())), file=outh)
+                    print(sequtils.wrap(str(s.translate())), file=outh)
         else:
-            refmap = {parse_seq_id(k)['ref']:k for k in list(jaln.keys())}
-            chrom, ref_s, ref_e = region_to_tuple(refreg)
+            refmap = {sequtils.parse_seq_id(k)['ref']:k for k in list(jaln.keys())}
+            chrom, ref_s, ref_e = sequtils.region_to_tuple(refreg)
             ref_s = ref_s - 1
             alignment = jaln[refmap[chrom]]
             
@@ -88,21 +93,21 @@ def extract_pairwise(align_json=None, outfile=None,
             nucstr = nucstr.replace('*', 'N')
             print('>%s (%s)' % (refmap[chrom], refreg), file=outh)
             if outfmt == 'nuc_fa':            
-                print(wrap(nucstr), file=outh)
+                print(sequtils.wrap(nucstr), file=outh)
             else:
                 s = Seq(nucstr[:(old_div(len(nucstr),3))*3])
-                print(wrap(str(s.translate())), file=outh)                
+                print(sequtils.wrap(str(s.translate())), file=outh)
 
     elif outfmt == 'aln_fa':
         jaln = load_slot_json(align_json, 'padded_alignments')
         for newname, alignment in list(jaln.items()):
-            aid = parse_seq_id(newname)
+            aid = sequtils.parse_seq_id(newname)
             rstr = ''.join(t[1] for t in alignment).replace('*', 'N')
             qstr = ''.join(t[2] for t in alignment).replace('*', 'N')
-            print('>ref|%s' % aid['ref'], file=outh)
-            print(wrap(rstr), file=outh)
-            print('>sid|%s' % aid['sid'], file=outh)
-            print(wrap(qstr), file=outh)
+            print('>ref|%s|' % aid['ref'], file=outh)
+            print(sequtils.wrap(rstr), file=outh)
+            print('>sid|%s|' % aid['sid'], file=outh)
+            print(sequtils.wrap(qstr), file=outh)
 
     elif outfmt == 'amp_gtf':
         jgtf = load_slot_json(align_json, 'padded_gtf')
@@ -116,8 +121,21 @@ def extract_pairwise(align_json=None, outfile=None,
                 print('\t'.join(str(_) for _ in l), file=outh)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Extract from consensus based on pairwise alignment')
+def console():
+    """ Entry point
+
+    Returns:
+        None
+
+    """
+    parser = argparse.ArgumentParser(
+        description='Extract sequences based on pairwise alignment.',
+        formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
+    )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**args_params(args))
+    args.func(**sysutils.args_params(args))
+
+
+if __name__ == '__main__':
+    console()
