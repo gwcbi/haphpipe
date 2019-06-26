@@ -129,8 +129,18 @@ Scaffold contigs using reference sequence. Input is contigs in FNA format and re
 
 ### hp_annotate
 
-Annotation
+Annotate consensus sequences.
+
+##### hp_pairwise_align 
+
+##### hp_post_assembly
+
+##### hp_extract_pairwise
+
+##### hp_annotate_from_ref
 
 ### hp_haplotype
 
-Haplotype
+Assembly stages.
+
+##### hp_predict_haplo
