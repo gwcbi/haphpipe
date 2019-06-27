@@ -35,6 +35,8 @@ setuptools.setup(name='haphpipe',
               # hp_annotate subcommands
               'hp_pairwise_align=haphpipe.stages.pairwise_align:console',
               'hp_extract_pairwise=haphpipe.stages.extract_pairwise:console',
+              # hp_haplotype subcommands
+              'hp_predict_haplo=haphpipe.stages.extract_pairwise:console',
           ],
       },
       zip_safe=False,

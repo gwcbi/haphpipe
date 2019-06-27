@@ -14,12 +14,14 @@ import shutil
 import time
 from collections import defaultdict
 
-from ..utils.sysutils import PipelineStepError, check_dependency
-from ..utils.sysutils import existing_file, existing_dir, command_runner, args_params
-from ..utils.sysutils import create_tempdir, remove_tempdir
-from ..utils.sequtils import fastagen, unambig_intervals
+from haphpipe.utils import sysutils
+from haphpipe.utils import sequtils
 
-from . import post_assembly #import samtools_depth, get_covered_intervals
+# import PipelineStepError, check_dependency
+# from ..utils.sysutils import existing_file, existing_dir, command_runner, args_params
+# from ..utils.sysutils import create_tempdir, remove_tempdir
+#from ..utils.sequtils import fastagen, unambig_intervals
+# from . import post_assembly #import samtools_depth, get_covered_intervals
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
@@ -119,48 +121,89 @@ def rename_best(d, rn):
 
 
 def stageparser(parser):
+    """ Add stage-specific options to argparse parser
+
+    Args:
+        parser (argparse.ArgumentParser): ArgumentParser object
+
+    Returns:
+        None
+
+    """
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--alignment', type=existing_file,
+    group1.add_argument('--alignment', type=sysutils.existing_file,
                         help='Alignment file (BAM)')
-    group1.add_argument('--ref_fa', type=existing_file,
+    group1.add_argument('--ref_fa', type=sysutils.existing_file,
                         help='Reference sequence used to align reads (fasta)')
-    group1.add_argument('--interval_txt', type=existing_file,
-                        help='File with intervals to perform haplotype reconstruction')
-    group1.add_argument('--outdir', type=existing_dir,
+    group1.add_argument('--interval_txt', type=sysutils.existing_file,
+                        help='''File with intervals to perform haplotype
+                                reconstruction''')
+    group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
                         help='Output directory')
     
-    group2 = parser.add_argument_group('Predict Haplo Options')
+    group2 = parser.add_argument_group('PredictHaplo Options')
     group2.add_argument('--min_depth', type=int,
-                        help='''Minimum depth to consider position covered. Ignored if 
-                                intervals are provided''')
-    group2.add_argument('--max_ambig', type=int,
-                        help='''Maximum size of ambiguous sequence within a reconstruction
-                                region. Ignored if intervals are provided.''')
-    group2.add_argument('--min_interval', type=int,
+                        help='''Minimum depth to consider position covered.
+                                Ignored if intervals are provided''')
+    group2.add_argument('--max_ambig', type=int, default=200,
+                        help='''Maximum size of ambiguous sequence within a
+                                reconstruction region. Ignored if intervals are
+                                provided.''')
+    group2.add_argument('--min_interval', type=int, default=200,
                         help='Minimum size of reconstruction interval')
-    group2.add_argument('--min_readlength', type=int,
+    group2.add_argument('--min_readlength', type=int, default=36,
                         help='''Minimum readlength passed to PredictHaplo''')
+
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--ncpu', type=int,
                         help='Number of CPU to use')
-    group3.add_argument('--max_memory', type=int,
-                        help='Maximum memory to use (in GB)')
+    # group3.add_argument('--max_memory', type=int,
+    #                     help='Maximum memory to use (in GB)')
     group3.add_argument('--keep_tmp', action='store_true',
                         help='Do not delete temporary directory')
+    group3.add_argument('--quiet', action='store_true',
+                        help='''Do not write output to console
+                                (silence stdout and stderr)''')
+    group3.add_argument('--logfile', type=argparse.FileType('a'),
+                        help='Append console output to this file')
     group3.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
+
     parser.set_defaults(func=predict_haplo)
 
 
 def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
         min_depth=None, max_ambig=200, min_interval=200, min_readlength=36,
-        ncpu=1, max_memory=50, keep_tmp=False, debug=False,
+        ncpu=1,
+        keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
+    """ Pipeline step to assemble haplotypes
+
+    Args:
+        alignment (str): Path to alignment file
+        ref_fa (str): Path to reference fasta file
+        interval_txt (str): Path to interval file
+        outdir (str): Path to output directory
+        min_depth (int): Minimum depth to consider position covered
+        max_ambig (int): Maximum size of ambiguous sequence within a region
+        min_interval (int): Minimum size of reconstruction region
+        min_readlength (int): Minimum readlength passed to PredictHaplo
+        ncpu (int): Number of CPUs to use
+        keep_tmp (bool): Do not delete temporary directory
+        quiet (bool): Do not write output to console
+        logfile (file): Append console output to this file
+        debug (bool): Print commands but do not run
+
+    Returns:
+        out_aligned (str): Path to aligned BAM file
+        out_bt2 (str): Path to bowtie2 report
+
+    """
     """ Assemble haplotypes with predicthaplo
     """
     # Check dependencies
-    check_dependency('PredictHaplo-Paired')
-    check_dependency('samtools')
+    sysutils.check_dependency('PredictHaplo-Paired')
+    sysutils.check_dependency('samtools')
     try:
         x = check_call('samtools 2>&1 >/dev/null | grep -q "collate"', shell=True)
         if debug: print("Using samtools collate", file=sys.stderr)
@@ -170,7 +213,7 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
         if debug: print("Using samtools sort", file=sys.stderr)        
     
     # Temporary directory
-    tempdir = create_tempdir('predict_haplo')
+    tempdir = sysutils.create_tempdir('predict_haplo', None, quiet, logfile)
     
     # Set up parameters        
     ph_params = dict(DEFAULTS)
@@ -178,7 +221,7 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     
     # Load reference fasta
     with open(ref_fa, 'rU') as fh:
-        seqs = [(n,s) for n,s in fastagen(fh)]
+        seqs = [(n,s) for n,s in sequtils.fastagen(fh)]
     
     assert len(seqs) == 1, 'ERROR: Reference must contain exactly one sequence'
     name, seq = seqs[0][0].split()[0], seqs[0][1]
@@ -234,7 +277,9 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     cmd1c = ['rm', '-f', os.path.join(tempdir, 'collated.bam')]
     
     # Create the SAM file
-    command_runner([cmd1a, cmd1b, cmd1c ], 'predict_haplo:setup', debug)
+    sysutils.command_runner(
+        [cmd1a, cmd1b, cmd1c ], 'predict_haplo:setup', quiet, logfile, debug
+    )
     ph_params['alignment'] = 'collated.sam'
     
     # Run in parallel when the number of runs is less than number of CPU
@@ -300,13 +345,16 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
                     processes.remove(tup)
             time.sleep(2)
     else:
-        command_runner(cmds, 'predict_haplo', debug)
+        sysutils.command_runner(
+            cmds, 'predict_haplo', quiet, logfile, debug
+        )
         if not debug:
             for rn in runnames:
                 rename_best(os.path.join(outdir, rn), rn)
-    
-    if not keep_tmp:
-        remove_tempdir(tempdir, 'predict_haplo')
+
+    print('tempdir: %s' % tempdir)
+    #if not keep_tmp:
+    #    sysutils.remove_tempdir(tempdir, 'predict_haplo', quiet, logfile)
     
     return
 
@@ -343,8 +391,21 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
 """    
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Assembly haplotypes with PredictHaplo')
+def console():
+    """ Entry point
+
+    Returns:
+        None
+
+    """
+    parser = argparse.ArgumentParser(
+        description='''Assemble haplotypes with PredictHaplo''',
+        formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
+    )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**args_params(args))
+    args.func(**sysutils.args_params(args))
+
+
+if __name__ == '__main__':
+    console()
