@@ -301,12 +301,14 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     runnames = []
     for i,iv in enumerate(recon_intervals):
         runnames.append('PH%02d' % (i+1))
-        print("Reconstruction region %s: %d - %d" % (runnames[-1], iv[0], iv[1]), file=sys.stderr)
+        msg = "Reconstruction region %s:" % runnames[-1]
+        msg += " %s:%d-%d" % (iv[0], iv[1], iv[2])
+        sysutils.log_message(msg, quiet, logfile)
         
         # Construct params specific for region
         reg_params = dict(ph_params)
-        reg_params['reconstruction_start'] = iv[0]
-        reg_params['reconstruction_stop'] = iv[1]
+        reg_params['reconstruction_start'] = iv[1]
+        reg_params['reconstruction_stop'] = iv[2]
         reg_params['prefix'] = '%s.' % runnames[-1]
         
         # Create config file for region
