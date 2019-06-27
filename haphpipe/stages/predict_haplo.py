@@ -159,8 +159,8 @@ def stageparser(parser):
                         help='''Minimum readlength passed to PredictHaplo''')
 
     group3 = parser.add_argument_group('Settings')
-    group3.add_argument('--ncpu', type=int,
-                        help='Number of CPU to use')
+    # group3.add_argument('--ncpu', type=int,
+    #                    help='Number of CPU to use')
     # group3.add_argument('--max_memory', type=int,
     #                     help='Maximum memory to use (in GB)')
     group3.add_argument('--keep_tmp', action='store_true',
@@ -179,7 +179,7 @@ def stageparser(parser):
 def predict_haplo(
         fq1=None, fq2=None, ref_fa=None, interval_txt=None, outdir='.',
         min_depth=None, max_ambig=200, min_interval=200, min_readlength=36,
-        ncpu=1,
+        # ncpu=1,
         keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
     """ Pipeline step to assemble haplotypes
@@ -257,6 +257,10 @@ def predict_haplo(
     for iv in recon_intervals:
         print('%s:%d-%d' % iv, file=sys.stderr)
 
+    # Run in parallel when the number of runs is less than number of CPU
+    # Since I don't want to handle queueing right now.
+    do_parallel = 1 < len(recon_intervals) < ncpu
+
     # Setup runs
     runnames = []
     for i, iv in enumerate(recon_intervals):
@@ -283,7 +287,34 @@ def predict_haplo(
             tmpconfig = config_template % reg_params
             print(tmpconfig.replace('###', '%'), file=outh)
 
+        # Create the output directory for this run
+        rundir = os.path.join(outdir, runname)
+        if not os.path.exists(rundir):
+            os.makedirs(rundir)
+
+        # Name for log file
+        logfile = os.path.join(rundir, '%s.log' % runname)
+
+        # Commands (to be run within temporary directory
+        cmds = [
+            ['cd', tempdir, ],
+            ['PredictHaplo-Paired', config_file, '&>', logfile, ],
+            ['cp', '%s*global*.fas' % runname, rundir, ],
+            ['cp', '%s*global*.html' % runname, rundir, ],
+        ]
+        sysutils.command_runner(
+            cmds, 'predict_haplo', quiet, logfile, debug
+        )
+    
+    if not debug:
+        for rn in runnames:
+            rename_best(os.path.join(outdir, rn), rn)
+
+    #if not keep_tmp:
+    #    sysutils.remove_tempdir(tempdir, 'predict_haplo', quiet, logfile)
+
     return
+
 
 """
 
