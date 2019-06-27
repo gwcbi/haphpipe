@@ -222,7 +222,7 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     ph_params['min_readlength'] = min_readlength
     
     # Load reference fasta
-    refs = [s for s in SeqIO.parse(ref_fa, 'fasta')]
+    refs = {s.id:s for s in SeqIO.parse(ref_fa, 'fasta')}
 
     # Load intervals
     recon_intervals = []
@@ -233,8 +233,8 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
             s, e = tuple(map(int, l.split(':')[1].split('-')))
             recon_intervals.append((chrom, s, e))
     else:
-        for r in refs:
-            recon_intervals.append((r.id, 1, len(r)))
+        for sid, s in refs.items():
+            recon_intervals.append((sid, 1, len(s)))
 
     # assert len(seqs) == 1, 'ERROR: Reference must contain exactly one sequence'
     # name, seq = seqs[0][0].split()[0], seqs[0][1]
@@ -247,46 +247,68 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     #     cov_ivs = post_assembly.get_intervals(covlines, ref_fa, max_ambig, min_depth, debug)
     #    recon_intervals = cov_ivs[name]
     
-    recon_intervals = [iv for iv in recon_intervals if iv[2]-iv[1] > min_interval]
-    recon_intervals.sort(key=lambda x:x[0])
+    # recon_intervals = [iv for iv in recon_intervals if iv[2]-iv[1] > min_interval]
+    # recon_intervals.sort(key=lambda x:x[0])
     
-    if not recon_intervals:
-        print("No intervals larger than %d were found" % min_interval, file=sys.stderr)
-        sys.exit()
-    else:    
-        print('Haplotype Reconstruction Regions:', file=sys.stderr)
-        for iv in recon_intervals:
-            print('%s:%d-%d' % iv, file=sys.stderr)
+    # if not recon_intervals:
+    #     print("No intervals larger than %d were found" % min_interval, file=sys.stderr)
+    #     sys.exit()
+    # else:
+    print('Haplotype Reconstruction Regions:', file=sys.stderr)
+    for iv in recon_intervals:
+        print('%s:%d-%d' % iv, file=sys.stderr)
+
+    runnames = []
+    for i, iv in enumerate(recon_intervals):
+        runname = 'PH%02d' % (i+1)
+        runnames.append(runname)
+        msg = "Reconstruction region %s:" % runname
+        msg += " %s:%d-%d" % (iv[0], iv[1], iv[2])
+        sysutils.log_message(msg, quiet, logfile)
+
+        # Construct params specific for region
+        reg_params = dict(ph_params)
+        reg_params['reconstruction_start'] = iv[1]
+        reg_params['reconstruction_stop'] = iv[2]
+        reg_params['prefix'] = '%s.' % runname
+
+        # Create single reference FASTA
+        _ref_fa = '%s_ref.fasta' % runname
+        SeqIO.write(refs[iv[0]], os.path.join(tempdir, _ref_fa), 'fasta')
+        reg_params['ref_fasta'] = _ref_fa
     
-    # Copy reference fasta
-    SeqIO.write(refs, os.path.join(tempdir, 'reference.fasta'), 'fasta')
-    ph_params['ref_fasta'] = 'reference.fasta'
+        # Collate or sort
+        _col_sam = '%s_collated.sam' % runname
+        cmd1a = ['samtools',
+                 'collate' if has_collate else 'sort -n',
+                 alignment,
+                 os.path.join(tempdir, 'collated'),
+                 ]
+        cmd1b = ['samtools',
+                 'view',
+                 '-h',
+                 os.path.join(tempdir, 'collated.bam'),
+                 '>',
+                 os.path.join(tempdir, 'collated.sam'),
+                 ]
+        cmd1c = ['rm', '-f', os.path.join(tempdir, 'collated.bam')]
     
-    # Collate or sort 
-    if has_collate:
-        cmd1a = ['samtools', 'collate',
-            alignment, 
-            os.path.join(tempdir, 'collated'),
-        ]
-    else:
-        cmd1a = ['samtools', 'sort',
-            '-n',
-            alignment, 
-            os.path.join(tempdir, 'collated'),
-        ]
-    cmd1b = ['samtools', 'view',
-        '-h', os.path.join(tempdir, 'collated.bam'), 
-        '>', 
-        os.path.join(tempdir, 'collated.sam'),
-    ]
-    cmd1c = ['rm', '-f', os.path.join(tempdir, 'collated.bam')]
-    
-    # Create the SAM file
-    sysutils.command_runner(
-        [cmd1a, cmd1b, cmd1c ], 'predict_haplo:setup', quiet, logfile, debug
-    )
-    ph_params['alignment'] = 'collated.sam'
-    
+        # Create the SAM file
+        sysutils.command_runner(
+            [cmd1a, cmd1b, cmd1c ], 'predict_haplo:setup', quiet, logfile, debug
+        )
+        reg_params['alignment'] = 'collated.sam'
+
+        # Create config file for region
+        config_file = '%s.config' % runname
+        with open(os.path.join(tempdir, config_file), 'w') as outh:
+            tmpconfig = config_template % reg_params
+            print(tmpconfig.replace('###', '%'), file=outh)
+
+    return
+
+"""
+
     # Run in parallel when the number of runs is less than number of CPU
     # Since I don't want to handle queueing right now.
     do_parallel = 1 < len(recon_intervals) < ncpu
@@ -298,12 +320,9 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
         print("Processing in order...", file=sys.stderr)
         cmds = [['cd', tempdir, ], ]
     
-    runnames = []
-    for i,iv in enumerate(recon_intervals):
-        runnames.append('PH%02d' % (i+1))
-        msg = "Reconstruction region %s:" % runnames[-1]
-        msg += " %s:%d-%d" % (iv[0], iv[1], iv[2])
-        sysutils.log_message(msg, quiet, logfile)
+
+
+
         
         # Construct params specific for region
         reg_params = dict(ph_params)
@@ -364,7 +383,7 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     #    sysutils.remove_tempdir(tempdir, 'predict_haplo', quiet, logfile)
     
     return
-
+"""
 
 """
     # Copy output files to output directory
