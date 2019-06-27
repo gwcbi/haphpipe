@@ -133,9 +133,11 @@ def stageparser(parser):
 
     """
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--alignment', type=sysutils.existing_file,
-                        help='Alignment file (BAM)')
-    group1.add_argument('--ref_fa', type=sysutils.existing_file,
+    group1.add_argument('--fq1', type=sysutils.existing_file, required=True,
+                        help='Fastq file with read 1')
+    group1.add_argument('--fq2', type=sysutils.existing_file, required=True,
+                        help='Fastq file with read 2')
+    group1.add_argument('--ref_fa', type=sysutils.existing_file, required=True,
                         help='Reference sequence used to align reads (fasta)')
     group1.add_argument('--interval_txt', type=sysutils.existing_file,
                         help='''File with intervals to perform haplotype
@@ -174,7 +176,8 @@ def stageparser(parser):
     parser.set_defaults(func=predict_haplo)
 
 
-def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
+def predict_haplo(
+        fq1=None, fq2=None, ref_fa=None, interval_txt=None, outdir='.',
         min_depth=None, max_ambig=200, min_interval=200, min_readlength=36,
         ncpu=1,
         keep_tmp=False, quiet=False, logfile=None, debug=False,
@@ -182,7 +185,8 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     """ Pipeline step to assemble haplotypes
 
     Args:
-        alignment (str): Path to alignment file
+        fq1 (str): Path to fastq file with read 1
+        fq2 (str): Path to fastq file with read 2
         ref_fa (str): Path to reference fasta file
         interval_txt (str): Path to interval file
         outdir (str): Path to output directory
@@ -205,22 +209,35 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     """
     # Check dependencies
     sysutils.check_dependency('PredictHaplo-Paired')
-    sysutils.check_dependency('samtools')
-    try:
-        x = check_call('samtools 2>&1 >/dev/null | grep -q "collate"', shell=True)
-        if debug: print("Using samtools collate", file=sys.stderr)
-        has_collate = True
-    except CalledProcessError as e:
-        has_collate = False
-        if debug: print("Using samtools sort", file=sys.stderr)        
+    # sysutils.check_dependency('samtools')
+    sysutils.check_dependency('bwa')
+
+    # try:
+    #     x = check_call('samtools 2>&1 >/dev/null | grep -q "collate"', shell=True)
+    #     if debug: print("Using samtools collate", file=sys.stderr)
+    #     has_collate = True
+    # except CalledProcessError as e:
+    #     has_collate = False
+    #     if debug: print("Using samtools sort", file=sys.stderr)
     
     # Temporary directory
     tempdir = sysutils.create_tempdir('predict_haplo', None, quiet, logfile)
-    
-    # Set up parameters        
+
+    # Create alignment
+    tmp_ref_fa = os.path.join(tempdir, 'ref.fa')
+    tmp_sam = os.path.join(tempdir, 'aligned.sam')
+    shutil.copy(ref_fa, tmp_ref_fa)
+    cmd1 = ['bwa', 'index', tmp_ref_fa, ]
+    cmd2 = ['bwa', 'mem', tmp_ref_fa, fq1, fq2, '>', tmp_sam, ]
+    sysutils.command_runner(
+        [cmd1, cmd2, ], 'predict_haplo:setup', quiet, logfile, debug
+    )
+
+    # Set up parameters
     ph_params = dict(DEFAULTS)
     ph_params['min_readlength'] = min_readlength
-    
+    ph_params['alignment'] = 'aligned.sam'
+
     # Load reference fasta
     refs = {s.id:s for s in SeqIO.parse(ref_fa, 'fasta')}
 
@@ -233,31 +250,14 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
             s, e = tuple(map(int, l.split(':')[1].split('-')))
             recon_intervals.append((chrom, s, e))
     else:
-        for sid, s in refs.items():
+        for s in refs.items():
             recon_intervals.append((sid, 1, len(s)))
 
-    # assert len(seqs) == 1, 'ERROR: Reference must contain exactly one sequence'
-    # name, seq = seqs[0][0].split()[0], seqs[0][1]
-    # if interval_txt:
-    # else:
-    #     # Identify reconstruction intervals, coverage method
-    #     print('Searching for covered intervals...', file=sys.stderr)
-    #     out = post_assembly.samtools_depth(alignment)
-    #     covlines = (l.split('\t') for l in out.strip('\n').split('\n'))
-    #     cov_ivs = post_assembly.get_intervals(covlines, ref_fa, max_ambig, min_depth, debug)
-    #    recon_intervals = cov_ivs[name]
-    
-    # recon_intervals = [iv for iv in recon_intervals if iv[2]-iv[1] > min_interval]
-    # recon_intervals.sort(key=lambda x:x[0])
-    
-    # if not recon_intervals:
-    #     print("No intervals larger than %d were found" % min_interval, file=sys.stderr)
-    #     sys.exit()
-    # else:
     print('Haplotype Reconstruction Regions:', file=sys.stderr)
     for iv in recon_intervals:
         print('%s:%d-%d' % iv, file=sys.stderr)
 
+    # Setup runs
     runnames = []
     for i, iv in enumerate(recon_intervals):
         runname = 'PH%02d' % (i+1)
@@ -270,34 +270,12 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
         reg_params = dict(ph_params)
         reg_params['reconstruction_start'] = iv[1]
         reg_params['reconstruction_stop'] = iv[2]
-        reg_params['prefix'] = '%s.' % runname
+        reg_params['prefix'] = '%s_out.' % runname
 
         # Create single reference FASTA
         _ref_fa = '%s_ref.fasta' % runname
         SeqIO.write(refs[iv[0]], os.path.join(tempdir, _ref_fa), 'fasta')
         reg_params['ref_fasta'] = _ref_fa
-    
-        # Collate or sort
-        _col_sam = '%s_collated.sam' % runname
-        cmd1a = ['samtools',
-                 'collate' if has_collate else 'sort -n',
-                 alignment,
-                 os.path.join(tempdir, 'collated'),
-                 ]
-        cmd1b = ['samtools',
-                 'view',
-                 '-h',
-                 os.path.join(tempdir, 'collated.bam'),
-                 '>',
-                 os.path.join(tempdir, 'collated.sam'),
-                 ]
-        cmd1c = ['rm', '-f', os.path.join(tempdir, 'collated.bam')]
-    
-        # Create the SAM file
-        sysutils.command_runner(
-            [cmd1a, cmd1b, cmd1c ], 'predict_haplo:setup', quiet, logfile, debug
-        )
-        reg_params['alignment'] = 'collated.sam'
 
         # Create config file for region
         config_file = '%s.config' % runname
