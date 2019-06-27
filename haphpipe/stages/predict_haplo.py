@@ -259,7 +259,7 @@ def predict_haplo(
 
     # Run in parallel when the number of runs is less than number of CPU
     # Since I don't want to handle queueing right now.
-    do_parallel = 1 < len(recon_intervals) < ncpu
+    # do_parallel = 1 < len(recon_intervals) < ncpu
 
     # Setup runs
     runnames = []
@@ -305,7 +305,7 @@ def predict_haplo(
         sysutils.command_runner(
             cmds, 'predict_haplo', quiet, logfile, debug
         )
-    
+
     if not debug:
         for rn in runnames:
             rename_best(os.path.join(outdir, rn), rn)
