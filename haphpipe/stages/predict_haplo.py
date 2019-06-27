@@ -14,6 +14,8 @@ import shutil
 import time
 from collections import defaultdict
 
+from Bio import SeqIO
+
 from haphpipe.utils import sysutils
 from haphpipe.utils import sequtils
 
@@ -220,28 +222,32 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     ph_params['min_readlength'] = min_readlength
     
     # Load reference fasta
-    with open(ref_fa, 'rU') as fh:
-        seqs = [(n,s) for n,s in sequtils.fastagen(fh)]
-    
-    assert len(seqs) == 1, 'ERROR: Reference must contain exactly one sequence'
-    name, seq = seqs[0][0].split()[0], seqs[0][1]
-    
+    refs = [s for s in SeqIO.parse(ref_fa, 'fasta')]
+
+    # Load intervals
+    recon_intervals = []
     if interval_txt:
         print('Found intervals file...', file=sys.stderr)
-        cov_ivs = defaultdict(list)
         for l in open(interval_txt, 'rU'):
             chrom = l.split(':')[0]
-            cov_ivs[chrom].append(tuple(map(int, l.split(':')[1].split('-'))))
-        recon_intervals = cov_ivs[name]  
+            s, e = tuple(map(int, l.split(':')[1].split('-')))
+            recon_intervals.append((chrom, s, e))
     else:
-        # Identify reconstruction intervals, coverage method    
-        print('Searching for covered intervals...', file=sys.stderr)
-        out = post_assembly.samtools_depth(alignment)
-        covlines = (l.split('\t') for l in out.strip('\n').split('\n'))
-        cov_ivs = post_assembly.get_intervals(covlines, ref_fa, max_ambig, min_depth, debug)
-        recon_intervals = cov_ivs[name]
+        for r in refs:
+            recon_intervals.append((r.id, 1, len(r)))
+
+    # assert len(seqs) == 1, 'ERROR: Reference must contain exactly one sequence'
+    # name, seq = seqs[0][0].split()[0], seqs[0][1]
+    # if interval_txt:
+    # else:
+    #     # Identify reconstruction intervals, coverage method
+    #     print('Searching for covered intervals...', file=sys.stderr)
+    #     out = post_assembly.samtools_depth(alignment)
+    #     covlines = (l.split('\t') for l in out.strip('\n').split('\n'))
+    #     cov_ivs = post_assembly.get_intervals(covlines, ref_fa, max_ambig, min_depth, debug)
+    #    recon_intervals = cov_ivs[name]
     
-    recon_intervals = [iv for iv in recon_intervals if iv[1]-iv[0] > min_interval]
+    recon_intervals = [iv for iv in recon_intervals if iv[2]-iv[1] > min_interval]
     recon_intervals.sort(key=lambda x:x[0])
     
     if not recon_intervals:
@@ -250,11 +256,10 @@ def predict_haplo(alignment=None, ref_fa=None, interval_txt=None, outdir='.',
     else:    
         print('Haplotype Reconstruction Regions:', file=sys.stderr)
         for iv in recon_intervals:
-            print('%s:%d-%d' % (name, iv[0], iv[1]), file=sys.stderr)
+            print('%s:%d-%d' % iv, file=sys.stderr)
     
     # Copy reference fasta
-    with open(os.path.join(tempdir, 'reference.fasta'), 'w') as outh:
-        print('>%s\n%s' % (name, seq), file=outh)
+    SeqIO.write(refs, os.path.join(tempdir, 'reference.fasta'), 'fasta')
     ph_params['ref_fasta'] = 'reference.fasta'
     
     # Collate or sort 
