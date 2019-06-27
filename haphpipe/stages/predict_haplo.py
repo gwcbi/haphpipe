@@ -250,7 +250,7 @@ def predict_haplo(
             s, e = tuple(map(int, l.split(':')[1].split('-')))
             recon_intervals.append((chrom, s, e))
     else:
-        for s in refs.items():
+        for sid, s in refs.items():
             recon_intervals.append((sid, 1, len(s)))
 
     print('Haplotype Reconstruction Regions:', file=sys.stderr)
