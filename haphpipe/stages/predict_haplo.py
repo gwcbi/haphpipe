@@ -293,12 +293,12 @@ def predict_haplo(
             os.makedirs(rundir)
 
         # Name for log file
-        logfile = os.path.join(rundir, '%s.log' % runname)
+        runlog = os.path.join(rundir, '%s.log' % runname)
 
         # Commands (to be run within temporary directory
         cmds = [
             ['cd', tempdir, ],
-            ['PredictHaplo-Paired', config_file, '&>', logfile, ],
+            ['PredictHaplo-Paired', config_file, '&>', runlog, ],
             ['cp', '%s*global*.fas' % runname, rundir, ],
             ['cp', '%s*global*.html' % runname, rundir, ],
         ]
