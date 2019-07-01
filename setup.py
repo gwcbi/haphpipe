@@ -37,6 +37,7 @@ setuptools.setup(name='haphpipe',
               'hp_extract_pairwise=haphpipe.stages.extract_pairwise:console',
               # hp_haplotype subcommands
               'hp_predict_haplo=haphpipe.stages.predict_haplo:console',
+              'hp_ph_parser=haphpipe.stages.ph_parser:console',
           ],
       },
       zip_safe=False,
