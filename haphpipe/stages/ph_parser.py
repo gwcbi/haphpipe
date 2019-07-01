@@ -143,7 +143,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Call variants.',
+        description='Parse output from PredictHaplo.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)
