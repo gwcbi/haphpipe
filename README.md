@@ -15,6 +15,7 @@ conda create -n haphpipe \
     biopython \
     seqtk \
     bowtie2 \
+    bwa \
     flash \
     freebayes \
     mummer \
@@ -23,7 +24,8 @@ conda create -n haphpipe \
     samtools=1.9 \
     gatk=3.8 \
     spades \
-    blast
+    blast \
+    sierrapy
 
 ```
 
