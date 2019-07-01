@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
@@ -7,17 +8,13 @@ import sys
 import os
 import re
 import argparse
-from subprocess import check_call, CalledProcessError
-from subprocess import Popen, PIPE
 from glob import glob
 import shutil
-import time
-from collections import defaultdict
 
 from Bio import SeqIO
 
 from haphpipe.utils import sysutils
-from haphpipe.utils import sequtils
+
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
@@ -142,23 +139,10 @@ def stageparser(parser):
                         help='Output directory')
     
     group2 = parser.add_argument_group('PredictHaplo Options')
-    group2.add_argument('--min_depth', type=int,
-                        help='''Minimum depth to consider position covered.
-                                Ignored if intervals are provided''')
-    group2.add_argument('--max_ambig', type=int, default=200,
-                        help='''Maximum size of ambiguous sequence within a
-                                reconstruction region. Ignored if intervals are
-                                provided.''')
-    group2.add_argument('--min_interval', type=int, default=200,
-                        help='Minimum size of reconstruction interval')
     group2.add_argument('--min_readlength', type=int, default=36,
                         help='''Minimum readlength passed to PredictHaplo''')
 
     group3 = parser.add_argument_group('Settings')
-    # group3.add_argument('--ncpu', type=int,
-    #                    help='Number of CPU to use')
-    # group3.add_argument('--max_memory', type=int,
-    #                     help='Maximum memory to use (in GB)')
     group3.add_argument('--keep_tmp', action='store_true',
                         help='Do not delete temporary directory')
     group3.add_argument('--quiet', action='store_true',
@@ -174,8 +158,7 @@ def stageparser(parser):
 
 def predict_haplo(
         fq1=None, fq2=None, ref_fa=None, interval_txt=None, outdir='.',
-        min_depth=None, max_ambig=200, min_interval=200, min_readlength=36,
-        # ncpu=1,
+        min_readlength=36,
         keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
     """ Pipeline step to assemble haplotypes
@@ -186,22 +169,15 @@ def predict_haplo(
         ref_fa (str): Path to reference fasta file
         interval_txt (str): Path to interval file
         outdir (str): Path to output directory
-        min_depth (int): Minimum depth to consider position covered
-        max_ambig (int): Maximum size of ambiguous sequence within a region
-        min_interval (int): Minimum size of reconstruction region
         min_readlength (int): Minimum readlength passed to PredictHaplo
-        ncpu (int): Number of CPUs to use
         keep_tmp (bool): Do not delete temporary directory
         quiet (bool): Do not write output to console
         logfile (file): Append console output to this file
         debug (bool): Print commands but do not run
 
     Returns:
-        out_aligned (str): Path to aligned BAM file
-        out_bt2 (str): Path to bowtie2 report
+        best_fa (list): Path to best haplotype files (FASTA)
 
-    """
-    """ Assemble haplotypes with predicthaplo
     """
     # Check dependencies
     sysutils.check_dependency('PredictHaplo-Paired')
