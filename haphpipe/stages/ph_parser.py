@@ -5,7 +5,6 @@ from __future__ import print_function
 from __future__ import division
 from past.utils import old_div
 import argparse
-import sys
 import os
 
 from haphpipe.utils import sysutils
@@ -43,15 +42,13 @@ def stageparser(parser):
                                 (silence stdout and stderr)''')
     group3.add_argument('--logfile', type=argparse.FileType('a'),
                         help='Append console output to this file')
-    group3.add_argument('--debug', action='store_true',
-                        help='Print commands but do not run')
     parser.set_defaults(func=ph_parser)
 
 
 def ph_parser(
         haplotypes_fa=None, outdir='.',
         prefix=None, keep_gaps=False,
-        quiet=False, logfile=None, debug=False,
+        quiet=False, logfile=None,
     ):
     """
 
@@ -62,7 +59,6 @@ def ph_parser(
         keep_gaps (bool): Do not remove gaps from alignment
         quiet (bool): Do not write output to console
         logfile (file): Append console output to this file
-        debug (bool): Print commands but do not run
 
     Returns:
 
