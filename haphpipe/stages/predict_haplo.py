@@ -19,12 +19,6 @@ from Bio import SeqIO
 from haphpipe.utils import sysutils
 from haphpipe.utils import sequtils
 
-# import PipelineStepError, check_dependency
-# from ..utils.sysutils import existing_file, existing_dir, command_runner, args_params
-# from ..utils.sysutils import create_tempdir, remove_tempdir
-#from ..utils.sequtils import fastagen, unambig_intervals
-# from . import post_assembly #import samtools_depth, get_covered_intervals
-
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
@@ -105,6 +99,7 @@ def rename_best(d, rn):
         print("WARNING: File %s exists." % os.path.join(d, bestfile), file=sys.stderr)
         os.unlink(os.path.join(d, bestfile))
     shutil.copy(fasta[bestidx], os.path.join(d, bestfile))
+    ret_fa = os.path.join(d, bestfile)
 
     # Copy output files to output directory
     html = glob(os.path.join(d, '%s*global*.html' % rn))
@@ -118,8 +113,9 @@ def rename_best(d, rn):
         print("WARNING: File %s exists." % os.path.join(d, bestfile), file=sys.stderr)
         os.unlink(os.path.join(d, bestfile))
     shutil.copy(html[bestidx], os.path.join(d, bestfile))
+    ret_html = os.path.join(d, bestfile)
     
-    return
+    return ret_fa, ret_html
 
 
 def stageparser(parser):
@@ -209,16 +205,7 @@ def predict_haplo(
     """
     # Check dependencies
     sysutils.check_dependency('PredictHaplo-Paired')
-    # sysutils.check_dependency('samtools')
     sysutils.check_dependency('bwa')
-
-    # try:
-    #     x = check_call('samtools 2>&1 >/dev/null | grep -q "collate"', shell=True)
-    #     if debug: print("Using samtools collate", file=sys.stderr)
-    #     has_collate = True
-    # except CalledProcessError as e:
-    #     has_collate = False
-    #     if debug: print("Using samtools sort", file=sys.stderr)
     
     # Temporary directory
     tempdir = sysutils.create_tempdir('predict_haplo', None, quiet, logfile)
@@ -253,177 +240,62 @@ def predict_haplo(
         for sid, s in refs.items():
             recon_intervals.append((sid, 1, len(s)))
 
-    print('Haplotype Reconstruction Regions:', file=sys.stderr)
+    sysutils.log_message('[--- Haplotype Reconstruction Regions ---]\n', quiet, logfile)
     for iv in recon_intervals:
-        print('%s:%d-%d' % iv, file=sys.stderr)
-
-    # Run in parallel when the number of runs is less than number of CPU
-    # Since I don't want to handle queueing right now.
-    # do_parallel = 1 < len(recon_intervals) < ncpu
-
+        sysutils.log_message('%s:%d-%d\n' % iv, quiet, logfile)
+    
     # Setup runs
-    runnames = []
+    runs = []
     for i, iv in enumerate(recon_intervals):
-        runname = 'PH%02d' % (i+1)
-        runnames.append(runname)
-        msg = "Reconstruction region %s:" % runname
-        msg += " %s:%d-%d" % (iv[0], iv[1], iv[2])
+        run_name = 'PH%02d' % (i+1)
+        msg = "Reconstruction region %s:" % run_name
+        msg += " %s:%d-%d\n" % (iv[0], iv[1], iv[2])
         sysutils.log_message(msg, quiet, logfile)
 
         # Construct params specific for region
         reg_params = dict(ph_params)
         reg_params['reconstruction_start'] = iv[1]
         reg_params['reconstruction_stop'] = iv[2]
-        reg_params['prefix'] = '%s_out.' % runname
+        reg_params['prefix'] = '%s_out.' % run_name
 
         # Create single reference FASTA
-        _ref_fa = '%s_ref.fasta' % runname
+        _ref_fa = '%s_ref.fasta' % run_name
         SeqIO.write(refs[iv[0]], os.path.join(tempdir, _ref_fa), 'fasta')
         reg_params['ref_fasta'] = _ref_fa
 
         # Create config file for region
-        config_file = '%s.config' % runname
+        config_file = '%s.config' % run_name
         with open(os.path.join(tempdir, config_file), 'w') as outh:
             tmpconfig = config_template % reg_params
             print(tmpconfig.replace('###', '%'), file=outh)
 
-        # Create the output directory for this run
-        rundir = os.path.join(outdir, runname)
-        if not os.path.exists(rundir):
-            os.makedirs(rundir)
+        run_cmd = ['PredictHaplo-Paired', config_file, '&>', '%s.log' % config_file]
+        runs.append((run_name, run_cmd))
 
-        # Name for log file
-        runlog = os.path.join(rundir, '%s.log' % runname)
-
-        # Commands (to be run within temporary directory
-        cmds = [
-            ['cd', tempdir, ],
-            ['PredictHaplo-Paired', config_file, '&>', runlog, ],
-            ['cp', '%s*global*.fas' % runname, rundir, ],
-            ['cp', '%s*global*.html' % runname, rundir, ],
-        ]
+    # Run PredictHaplo
+    best_fa = []
+    cmd0 = ['cd', tempdir, ]
+    for run_name, run_cmd in runs:
         sysutils.command_runner(
-            cmds, 'predict_haplo', quiet, logfile, debug
+            [cmd0, run_cmd], 'predict_haplo:%s' % run_name, quiet, logfile, debug
         )
-
-    if not debug:
-        for rn in runnames:
-            rename_best(os.path.join(outdir, rn), rn)
-
-    #if not keep_tmp:
-    #    sysutils.remove_tempdir(tempdir, 'predict_haplo', quiet, logfile)
-
-    return
-
-
-"""
-
-    # Run in parallel when the number of runs is less than number of CPU
-    # Since I don't want to handle queueing right now.
-    do_parallel = 1 < len(recon_intervals) < ncpu
+        if debug: continue
+        # Copy results to output directory
+        dest = os.path.join(outdir, run_name)        
+        if not os.path.exists(dest):
+            os.makedirs(dest)
+        shutil.copy(os.path.join(tempdir, '%s.config.log' % run_name), dest)
+        for f in glob(os.path.join(tempdir, '%s_out*global*.fas' % run_name)):
+            shutil.copy(f, dest)
+        for f in glob(os.path.join(tempdir, '%s_out*global*.html' % run_name)):
+            shutil.copy(f, dest)
+        bf, bh = rename_best(dest, run_name)
+        best_fa.append(bf)
     
-    if do_parallel:
-        print("Processing in parallel...", file=sys.stderr)
-        processes = []
-    else:
-        print("Processing in order...", file=sys.stderr)
-        cmds = [['cd', tempdir, ], ]
+    if not keep_tmp:
+         sysutils.remove_tempdir(tempdir, 'predict_haplo', quiet, logfile)
     
-
-
-
-        
-        # Construct params specific for region
-        reg_params = dict(ph_params)
-        reg_params['reconstruction_start'] = iv[1]
-        reg_params['reconstruction_stop'] = iv[2]
-        reg_params['prefix'] = '%s.' % runnames[-1]
-        
-        # Create config file for region
-        config_file = '%s.config' % runnames[-1]        
-        with open(os.path.join(tempdir, config_file), 'w') as outh:
-            tmpconfig = config_template % reg_params
-            print(tmpconfig.replace('###', '%'), file=outh)
-        
-        # Create the output directory for this run
-        rundir = os.path.join(outdir, runnames[-1])
-        if not os.path.exists(rundir):
-            os.makedirs(rundir)
-        rundir = os.path.abspath(rundir)
-        
-        # Name for log file    
-        logfile = os.path.join(rundir, '%s.log' % runnames[-1])
-        
-        # Commands (to be run within temporary directory
-        rcmds = [
-            ['PredictHaplo-Paired', config_file, '&>', logfile, ],
-            ['cp', '%s*global*.fas' % runnames[-1], rundir, ],
-            ['cp', '%s*global*.html' %  runnames[-1], rundir, ],
-        ]
-        if do_parallel:
-            print("Spawning process for %s" % runnames[-1], file=sys.stderr)
-            rcmds = [['cd', tempdir, ]] + rcmds
-            cmdstr = ' && '.join(' '.join(c) for c in rcmds)
-            print(cmdstr, file=sys.stderr)
-            if not debug:
-                processes.append((runnames[-1], Popen(cmdstr, shell=True)))
-        else:
-            cmds.extend(rcmds)
-    
-    if do_parallel:
-        while processes:
-            for tup in processes[:]:
-                rn, p = tup
-                if p.poll() is not None:
-                    print("PredictHaplo for %s is complete" % rn, file=sys.stderr)
-                    rename_best(os.path.join(outdir, rn), rn)
-                    processes.remove(tup)
-            time.sleep(2)
-    else:
-        sysutils.command_runner(
-            cmds, 'predict_haplo', quiet, logfile, debug
-        )
-        if not debug:
-            for rn in runnames:
-                rename_best(os.path.join(outdir, rn), rn)
-
-    print('tempdir: %s' % tempdir)
-    #if not keep_tmp:
-    #    sysutils.remove_tempdir(tempdir, 'predict_haplo', quiet, logfile)
-    
-    return
-"""
-
-"""
-    # Copy output files to output directory
-    for rn in runnames:
-        rundir = os.path.join(outdir, rn)
-        if not os.path.exists(rundir):
-            os.makedirs(rundir)
-        # Copy the fasta files
-        fasta = glob(os.path.join(tempdir, '%s*global*.fas' % rn))
-        coords = [re.match('\S+global_(\d+)_(\d+).fas', f) for f in fasta]
-        coords = [map(int, m.groups()) if m else [0,0] for m in coords]
-        sizes = [c[1]-c[0] for c in coords]
-        for i,f in enumerate(fasta):
-            shutil.copy(f, rundir)
-            if sizes[i] == max(sizes):
-                bestfile = '%s.best_%d_%d.fas' % (rn, coords[i][0], coords[i][1])
-                shutil.copy(f, os.path.join(rundir, bestfile))
-        # Copy the html files
-        html = glob(os.path.join(tempdir, '%s*global*.html' % rn))
-        coords = [re.match('\S+global_visuAlign_(\d+)_(\d+).html', f) for f in html]
-        coords = [map(int, m.groups()) if m else [0,0] for m in coords]
-        sizes = [c[1]-c[0] for c in coords]
-        for i,f in enumerate(html):
-            shutil.copy(f, rundir)
-            if sizes[i] == max(sizes):
-                bestfile = '%s.best_%d_%d.html' % (rn, coords[i][0], coords[i][1])
-                shutil.copy(f, os.path.join(rundir, bestfile))
-        # Copy the log
-        if os.path.isfile(os.path.join(tempdir, '%s.log' % rn)):
-            shutil.copy(os.path.join(tempdir, '%s.log' % rn), rundir)
-"""    
+    return best_fa
 
 
 def console():
