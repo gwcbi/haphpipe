@@ -282,7 +282,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='''Assemble haplotypes with PredictHaplo''',
+        description='''Assemble haplotypes with PredictHaplo.''',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

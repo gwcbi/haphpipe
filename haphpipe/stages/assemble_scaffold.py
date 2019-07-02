@@ -130,7 +130,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Scaffold contigs using reference sequence',
+        description='Assemble contigs to genome.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

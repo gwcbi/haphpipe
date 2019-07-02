@@ -145,7 +145,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Join reads using FLASH',
+        description='Join reads using FLASh.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

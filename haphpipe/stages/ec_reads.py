@@ -146,7 +146,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Error correct reads using spades',
+        description='Error correct reads using SPAdes.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

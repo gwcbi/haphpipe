@@ -129,8 +129,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='''Finalize consensus sequence, align all reads to
-                       consensus, and call variants in dataset''',
+        description='''Finalize consensus sequence.''',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

@@ -275,7 +275,7 @@ def console():
     """
     parser = argparse.ArgumentParser(
         description='''Three step assembly refinement: align reads, call
-                       variants, and update reference''',
+                       variants, and update reference.''',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

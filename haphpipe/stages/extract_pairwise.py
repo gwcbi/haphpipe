@@ -129,7 +129,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Extract sequences based on pairwise alignment.',
+        description='Extract sequence regions from pairwise alignment.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

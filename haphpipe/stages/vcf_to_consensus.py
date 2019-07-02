@@ -198,7 +198,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Create consensus sequence from VCF',
+        description='Create consensus sequence from VCF.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

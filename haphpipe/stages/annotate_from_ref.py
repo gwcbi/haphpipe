@@ -11,7 +11,8 @@ from subprocess import check_output
 from collections import defaultdict, Counter
 
 
-from haphpipe.utils.sysutils import existing_file, args_params
+from haphpipe.utils import sysutils
+# import existing_file, args_params
 from haphpipe.utils.sequtils import wrap, parse_seq_id, region_to_tuple
 from haphpipe.utils.blastalign import called_regions, get_seg_stats, load_slot_json
 from haphpipe.utils.gtfparse import gtf_parser, GTFRow
@@ -23,10 +24,10 @@ __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--align_json', type=existing_file, required=True,
+    group1.add_argument('--align_json', type=sysutils.existing_file, required=True,
                         help='''JSON file describing alignment (output of pairwise_align
                                 stage)''')
-    group1.add_argument('--ref_gtf', type=existing_file, required=True,
+    group1.add_argument('--ref_gtf', type=sysutils.existing_file, required=True,
                         help='''GTF file for reference regions''')
     group1.add_argument('--outfile',
                         help='''Output file. Default is stdout''')
@@ -36,7 +37,8 @@ def stageparser(parser):
     parser.set_defaults(func=annotate_from_ref)
 
 
-def annotate_from_ref(align_json=None, align_bam=None, ref_gtf=None, outfile=None,
+def annotate_from_ref(
+        align_json=None, ref_gtf=None, outfile=None,
         outfmt=None,
         debug=False,
     ):
@@ -85,8 +87,21 @@ def annotate_from_ref(align_json=None, align_bam=None, ref_gtf=None, outfile=Non
         print(new_gr, file=outh)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Annotate consensus from reference annotation')
+def console():
+    """ Entry point
+
+    Returns:
+        None
+
+    """
+    parser = argparse.ArgumentParser(
+        description='Annotate consensus from reference annotation.',
+        formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
+    )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**args_params(args))
+    args.func(**sysutils.args_params(args))
+
+
+if __name__ == '__main__':
+    console()

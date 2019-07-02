@@ -280,7 +280,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Assemble reads denovo',
+        description='Assemble reads denovo.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

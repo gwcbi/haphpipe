@@ -220,7 +220,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Align amplicons to reference',
+        description='Align consensus to an annotated reference.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

@@ -184,7 +184,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Assemble contigs using reference and amplicon regions',
+        description='Assemble contigs to amplicon regions.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
 import setuptools
 
+from haphpipe._version import VERSION
+
 setuptools.setup(name='haphpipe',
-      version='0.8',
+      version=VERSION,
       description='HAplotype and PHylodynamics pipeline for viral assembly, population genetics, and phylodynamics.',
       url='https://github.com/gwcbi/haphpipe',
       author='Matthew L. Bendall',
@@ -13,6 +16,7 @@ setuptools.setup(name='haphpipe',
       ],
       entry_points={
           'console_scripts': [
+              'haphpipe=haphpipe.haphpipe:console',
               # Stage groups
               'hp_reads=haphpipe.reads:console',
               'hp_assemble=haphpipe.assemble:main',
