@@ -150,7 +150,7 @@ def console():
     # post_assembly.stageparser(
     #     sub.add_parser('post_assembly', formatter_class=HF)
     # )
-    
+
     args = parser.parse_args()
     args.func(**sysutils.args_params(args))
 

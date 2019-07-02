@@ -17,11 +17,6 @@ setuptools.setup(name='haphpipe',
       entry_points={
           'console_scripts': [
               'haphpipe=haphpipe.haphpipe:console',
-              # Stage groups
-              'hp_reads=haphpipe.reads:console',
-              'hp_assemble=haphpipe.assemble:main',
-              'hp_annotate=haphpipe.annotate:main',
-              'hp_haplotype=haphpipe.haplotype:main',
               # hp_reads subcommands
               'hp_sample_reads=haphpipe.stages.sample_reads:console',
               'hp_trim_reads=haphpipe.stages.trim_reads:console',
