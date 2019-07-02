@@ -85,7 +85,7 @@ if [[ -e $outdir/trimmed_1.fastq && -e ${outdir}/trimmed_2.fastq ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage trimmed_1.fastq,trimmed_2.fastq"
 else
     read -r -d '' cmd <<EOF
-hp_reads trim_reads\
+haphpipe trim_reads\
  --ncpu $ncpu\
  --fq1 $raw1\
  --fq2 $raw2\
@@ -109,7 +109,7 @@ if [[ -e $outdir/corrected_1.fastq && -e $outdir/corrected_2.fastq ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
     read -r -d '' cmd <<EOF
-hp_reads ec_reads\
+haphpipe ec_reads\
  --ncpu $ncpu\
  --fq1 ${outdir}/trimmed_1.fastq\
  --fq2 ${outdir}/trimmed_2.fastq\
@@ -133,7 +133,7 @@ if [[ -e ${outdir}/denovo_contigs.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage denovo_contigs.fna"
 else
     read -r -d '' cmd <<EOF
-hp_assemble assemble_denovo\
+haphpipe assemble_denovo\
  --ncpu $ncpu\
  --fq1 ${outdir}/trimmed_1.fastq\
  --fq2 ${outdir}/trimmed_2.fastq\
