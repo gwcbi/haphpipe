@@ -8,6 +8,7 @@ from builtins import map
 from builtins import str
 from builtins import zip
 from builtins import range
+import sys
 import os
 import shutil
 import re
@@ -23,6 +24,7 @@ from haphpipe.stages import align_reads
 from haphpipe.stages import call_variants
 from haphpipe.stages import vcf_to_consensus
 from haphpipe.stages import sample_reads
+from haphpipe.utils.sysutils import MissingRequiredArgument
 
 
 __author__ = 'Matthew L. Bendall'
@@ -280,7 +282,12 @@ def console():
     )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**sysutils.args_params(args))
+    try:
+        args.func(**sysutils.args_params(args))
+    except MissingRequiredArgument as e:
+        parser.print_usage()
+        print('error: %s' % e, file=sys.stderr)
+
 
 
 if __name__ == '__main__':

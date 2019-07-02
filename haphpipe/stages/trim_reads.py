@@ -1,11 +1,15 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+import sys
 import os
 import argparse
 
 from haphpipe.utils import helpers
 from haphpipe.utils import sysutils
+from haphpipe.utils.sysutils import PipelineStepError
+from haphpipe.utils.sysutils import MissingRequiredArgument
 
 
 __author__ = 'Matthew L. Bendall'
@@ -97,8 +101,9 @@ def trim_reads(
     elif fq1 is None and fq2 is None and fqU is not None:
         input_reads = "single" # Single end
     else:
-        msg = "Incorrect combination of reads: fq1=%s fq2=%s fqU=%s" % (fq1, fq2, fqU)
-        raise sysutils.PipelineStepError(msg)
+        msg = "incorrect input reads; requires either "
+        msg += "(--fq1 and --fq2) OR (--fqU)"
+        raise MissingRequiredArgument(msg)
         
     """ There are two different ways to call Trimmomatic. If using modules on
         C1, the path to the jar file is stored in the "$Trimmomatic"
@@ -109,7 +114,7 @@ def trim_reads(
     try:
         sysutils.check_dependency('trimmomatic')
         cmd1 = ['trimmomatic']
-    except sysutils.PipelineStepError as e:
+    except PipelineStepError as e:
         if 'Trimmomatic' in os.environ:
             cmd1 = ['java', '-jar', '$Trimmomatic']
         else:
@@ -194,7 +199,11 @@ def console():
     )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**sysutils.args_params(args))
+    try:
+        args.func(**sysutils.args_params(args))
+    except MissingRequiredArgument as e:
+        parser.print_usage()
+        print('error: %s' % e, file=sys.stderr)
 
 
 if __name__ == '__main__':

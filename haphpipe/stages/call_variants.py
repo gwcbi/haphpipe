@@ -23,14 +23,15 @@ def stageparser(parser):
 
     """
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--aln_bam',
-                        type=sysutils.existing_file, required=True,
+    group1.add_argument('--aln_bam', type=sysutils.existing_file,
+                        required=True,
                         help='Alignment file.')    
     group1.add_argument('--ref_fa',
-                        type=sysutils.existing_file, required=True,
+                        type=sysutils.existing_file,
+                        required=True,
                         help='Reference fasta file.')
-    group1.add_argument('--outdir',
-                        type=sysutils.existing_dir, default='.',
+    group1.add_argument('--outdir', type=sysutils.existing_dir,
+                        default='.',
                         help='Output directory')
     
     group2 = parser.add_argument_group('Variant calling options')    

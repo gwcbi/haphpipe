@@ -29,11 +29,15 @@ def stageparser(parser):
 
     """
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--contigs_fa', type=sysutils.existing_file, required=True,
+    group1.add_argument('--contigs_fa', type=sysutils.existing_file,
+                        required=True,
                         help='Fasta file with assembled contigs')
-    group1.add_argument('--ref_fa', type=sysutils.existing_file, required=True,
-                        help='Fasta file with reference genome to scaffold against')
-    group1.add_argument('--ref_gtf', type=sysutils.existing_file, required=True,
+    group1.add_argument('--ref_fa', type=sysutils.existing_file,
+                        required=True,
+                        help='''Fasta file with reference genome to scaffold
+                                against''')
+    group1.add_argument('--ref_gtf', type=sysutils.existing_file,
+                        required=True,
                         help='GTF format file containing amplicon regions')
     group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
                         help='Output directory')

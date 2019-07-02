@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import os
 import argparse
 import shutil
@@ -8,6 +9,8 @@ import shutil
 from haphpipe.utils import sysutils
 from haphpipe.utils import sequtils
 from haphpipe.stages import sample_reads
+from haphpipe.utils.sysutils import MissingRequiredArgument
+
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
@@ -136,9 +139,9 @@ def assemble_denovo_spades(
     elif fq1 is not None and fq2 is not None and fqU is not None:
         input_reads = "both"
     else:
-        msg = "Incorrect combination of reads: "
-        msg += "fq1=%s fq2=%s fqU=%s" % (fq1, fq2, fqU)
-        raise sysutils.PipelineStepError(msg)
+        msg = "incorrect input reads; requires either "
+        msg += "(--fq1 AND --fq2) OR (--fqU) OR (--fq1 AND --fq2 AND --fqU)"
+        raise MissingRequiredArgument(msg)
 
     # Check dependencies
     sysutils.check_dependency('spades.py')
@@ -224,8 +227,9 @@ def assemble_denovo_trinity(
     elif fq1 is not None and fq2 is not None and fqU is not None:
         input_reads = "both"
     else:
-        msg = "Incorrect combination of reads: fq1=%s fq2=%s fqU=%s" % (fq1, fq2, fqU)
-        raise sysutils.PipelineStepError(msg)
+        msg = "incorrect input reads; requires either "
+        msg += "(--fq1 AND --fq2) OR (--fqU) OR (--fq1 AND --fq2 AND --fqU)"
+        raise MissingRequiredArgument(msg)
     
     # Check dependencies
     sysutils.check_dependency('Trinity')
@@ -285,7 +289,11 @@ def console():
     )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**sysutils.args_params(args))
+    try:
+        args.func(**sysutils.args_params(args))
+    except MissingRequiredArgument as e:
+        parser.print_usage()
+        print('error: %s' % e, file=sys.stderr)
 
 
 if __name__ == '__main__':

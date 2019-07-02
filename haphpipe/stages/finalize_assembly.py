@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from builtins import str
+import sys
 import os
 import argparse
 import shutil
@@ -15,6 +16,7 @@ from haphpipe.utils import sysutils
 from haphpipe.utils import sequtils
 from haphpipe.stages import align_reads
 from haphpipe.stages import call_variants
+from haphpipe.utils.sysutils import MissingRequiredArgument
 
 
 __author__ = 'Matthew L. Bendall'
@@ -134,7 +136,11 @@ def console():
     )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**sysutils.args_params(args))
+    try:
+        args.func(**sysutils.args_params(args))
+    except MissingRequiredArgument as e:
+        parser.print_usage()
+        print('error: %s' % e, file=sys.stderr)
 
 if __name__ == '__main__':
     console()

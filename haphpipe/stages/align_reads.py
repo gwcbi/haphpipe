@@ -8,6 +8,8 @@ import argparse
 
 from haphpipe.utils import helpers
 from haphpipe.utils import sysutils
+from haphpipe.utils.sysutils import MissingRequiredArgument
+
 
 
 __author__ = 'Matthew L. Bendall'
@@ -113,9 +115,9 @@ def align_reads(
     elif fq1 is not None and fq2 is not None and fqU is not None:
         input_reads = "both"
     else:
-        msg = "Incorrect combination of reads: "
-        msg += "fq1=%s fq2=%s fqU=%s" % (fq1, fq2, fqU)
-        raise sysutils.PipelineStepError(msg)
+        msg = "incorrect input reads; requires either "
+        msg += "(--fq1 AND --fq2) OR (--fqU) OR (--fq1 AND --fq2 AND --fqU)"
+        raise MissingRequiredArgument(msg)
     
     if encoding is None:
         if input_reads == 'single':
@@ -266,7 +268,11 @@ def console():
     )
     stageparser(parser)
     args = parser.parse_args()
-    args.func(**sysutils.args_params(args))
+    try:
+        args.func(**sysutils.args_params(args))
+    except MissingRequiredArgument as e:
+        parser.print_usage()
+        print('error: %s' % e, file=sys.stderr)
 
 
 if __name__ == '__main__':

@@ -20,6 +20,10 @@ class PipelineStepError(Exception):
     pass
 
 
+class MissingRequiredArgument(Exception):
+    pass
+
+
 class ArgumentDefaultsHelpFormatterSkipNone(argparse.HelpFormatter):
     """Help message formatter which adds default values to argument help.
 

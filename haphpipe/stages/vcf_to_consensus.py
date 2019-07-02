@@ -71,7 +71,8 @@ def stageparser(parser):
 
     """
     group1 = parser.add_argument_group('Input/Output')
-    group1.add_argument('--vcf', type=sysutils.existing_file, required=True,
+    group1.add_argument('--vcf', type=sysutils.existing_file,
+                        required=True,
                         help='VCF file (created with all sites).')
     group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
                         help='Output directory')

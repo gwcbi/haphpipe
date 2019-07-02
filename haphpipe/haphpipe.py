@@ -7,6 +7,7 @@ import argparse
 
 from haphpipe.utils import sysutils
 from haphpipe.utils.sysutils import ArgumentDefaultsHelpFormatterSkipNone as HF
+from haphpipe.utils.sysutils import MissingRequiredArgument
 
 from haphpipe._version import VERSION
 
@@ -29,9 +30,9 @@ from haphpipe.stages import predict_haplo
 from haphpipe.stages import ph_parser
 # Annotate stages
 from haphpipe.stages import pairwise_align
-from haphpipe.stages import post_assembly
 from haphpipe.stages import extract_pairwise
 from haphpipe.stages import annotate_from_ref
+# from haphpipe.stages import post_assembly
 
 BASE_USAGE = '''
 Program: haphpipe (haplotype and phylodynamics pipeline)
@@ -87,6 +88,12 @@ class _BaseHelpAction(argparse.Action):
 def console():
     parser = argparse.ArgumentParser(formatter_class=HF, add_help=False)
     parser.add_argument('-h', '--help', action=_BaseHelpAction)
+
+    # Exit with help if no args were given
+    if len(sys.argv) == 1:
+        parser.parse_args(['-h'])
+
+    # Subparsers
     sub = parser.add_subparsers()
 
     # Reads stages
@@ -152,7 +159,11 @@ def console():
     # )
 
     args = parser.parse_args()
-    args.func(**sysutils.args_params(args))
+    try:
+        args.func(**sysutils.args_params(args))
+    except MissingRequiredArgument as e:
+        sub._name_parser_map[sys.argv[1]].print_usage()
+        print('error: %s' % e, file=sys.stderr)
 
 
 if __name__ == '__main__':
