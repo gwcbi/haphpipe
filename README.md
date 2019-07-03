@@ -77,7 +77,7 @@ with up to 5 refinement steps.
 
 ## Stages
 
-Each stage can be run on its own. Stages are grouped into 4 categories: hp_reads, hp_assemble, hp_annotate, and hp_haplotype.
+Each stage can be run on its own. Stages are grouped into 4 categories: hp_reads, hp_assemble, hp_haplotype, and hp_annotate.
 More detailed description of command line options for each stage are available in the [wiki](https://github.com/gwcbi/haphpipe/wiki).
 
 [TODO] Finish describing each haphpipe stage. 
@@ -114,20 +114,37 @@ Assemble reads using denovo assembly. Input is reads in FASTQ format. Output is 
 
 ##### hp_assemble_amplicons
 
+Assemble contigs using reference sequence and amplicon regions. Input is contigs and reference sequence in FASTA format and amplicon regions in GTF format.
 
 ##### hp_assemble_scaffold
 
-Scaffold contigs using reference sequence. Input is contigs in FNA format and reference sequence in FASTA format. Output is scaffold assembly, alligned scaffold, imputed scaffold, and padded scaffold in FASTA format.
+Scaffold contigs using reference sequence. Input is contigs in FASTA format and reference sequence in FASTA format. Output is scaffold assembly, alligned scaffold, imputed scaffold, and padded scaffold in FASTA format.
 
 ##### hp_align_reads
 
+Map reads to reference sequence. Input is reads in FASTQ format and reference sequence in FASTA format. 
+
 ##### hp_call_variants
+
+Variant calling from alignment. Input is alignment file in BAM format and reference sequence in FASTA format. Output is a VCF format file. 
 
 ##### hp_vcf_to_consensus
 
+Generate a consensus sequence from a VCF file. Input is a VCF file. Output is the consensus sequence in FASTA format. 
+
 ##### hp_refine_assembly
 
+Map reads to a denovo assembly or reference alignment. Assembly or alignment is iteratively updated. Input is reads in FASTQ format and reference sequence (assembly or reference alignment) in FASTA format. Output is refined assembly in 
+
 ##### hp_finalize_assembly
+
+Finalize consensus, map reads to consensus, and call variants. Input is reads in FASTQ format and reference sequence in FASTA format. Output is finalized reference sequence, alignment, and variants (in FASTA, BAM, and VCF formats, respectively).
+
+### hp_haplotype
+
+Assembly stages.
+
+##### hp_predict_haplo
 
 ### hp_annotate
 
@@ -141,8 +158,4 @@ Annotate consensus sequences.
 
 ##### hp_annotate_from_ref
 
-### hp_haplotype
 
-Assembly stages.
-
-##### hp_predict_haplo
