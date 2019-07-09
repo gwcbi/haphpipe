@@ -81,90 +81,162 @@ See more information regarding the pipelines at the [wiki](https://github.com/gw
 ## Stages
 
 Each stage can be run on its own. Stages are grouped into 4 categories: hp_reads, hp_assemble, hp_haplotype, and hp_annotate.
-More detailed description of command line options for each stage are available in the [wiki](https://github.com/gwcbi/haphpipe/wiki).
+More detailed description of command line options for each stage are available in the [wiki](https://github.com/gwcbi/haphpipe/wiki). To view all available stages in HAPHPIPE, run: 
+```
+haphpipe -h
+```
 
+[TODO] Finish describing each haphpipe stage. 
 
 ### hp_reads
 
-Manipulate reads. Input is reads in fastq format, output is modified reads in fastq format.
+Stages to manipulate reads and perform quality control. Input is reads in FASTQ format, output is modified reads in FASTQ format.
 
 ##### sample_reads
 
-Subsample reads using seqtk. Input is reads in fastq format. Options are the number of reads to sample, fraction of reads to sample (between 0 and 1), and seed. Output is sampled reads in fastq format.
+Subsample reads using seqtk ([documentation](https://github.com/lh3/seqtk)). Input is reads in FASTQ format. Output is sampled reads in FASTQ format.
+Example to execute:
+```
+haphpipe sample_reads --fq1 read_1.fastq --fq2 read_2.fastq --nreads 1000 --seed 1234
+```
 
 ##### trim_reads
 
-Trim reads using Trimmomatic. Input is reads in fastq format. Options are adapter file, trimmers, and encoding. Output is trimmed reads in fastq format.
+Trim reads using Trimmomatic ([documentation](http://www.usadellab.org/cms/?page=trimmomatic)). Input is reads in FASTQ format. Output is trimmed reads in FASTQ format.
+Example to execute:
+```
+haphpipe trim_reads --fq1 read_1.fastq --fq2 read_2.fastq 
+```
 
 ##### join_reads
 
-Join reads using FLASH. Input is reads in fastq format. Output is joined reads in fastq format.
+Join reads using FLASH ([paper](https://www.ncbi.nlm.nih.gov/pubmed/21903629)). Input is reads in FASTQ format. Output is joined reads in FASTQ format.
+Example to execute:
+```
+haphpipe join_reads --fq1 trimmed_1.fastq --fq2 trimmed_2.fastq
+```
 
 ##### ec_reads
 
-Error correction using spades. Input is reads in fastq format. Output is error-corrected reads in fastq format.
-
+Error correction using SPAdes ([documentation](http://cab.spbu.ru/software/spades/)). Input is reads in FASTQ format. Output is error-corrected reads in FASTQ format.
+Example to execute:
+```
+haphpipe ec_reads --fq1 trimmed_1.fastq --fq2 trimmed_2.fastq
+```
 
 ### hp_assemble
 
-Assemble consensus sequence(s). Input reads (in fastq format) are assembled 
+Assemble consensus sequence(s). Input reads (in FASTQ format) are assembled 
 using either denovo assembly or reference-based alignment. 
 Resulting consensus can be further refined.
 
 ##### assemble_denovo
 
-Assemble reads using denovo assembly. Input is reads in FASTQ format. Output is contigs in FNA format.
-
+Assemble reads via de novo assembly using SPAdes ([documentation](http://cab.spbu.ru/software/spades/)). Input is reads in FASTQ format. Output is contigs in FNA format.
+Example to execute:
+```
+haphpipe assemble_denovo --fq1 corrected_1.fastq --fq2 corrected_2.fastq --outdir denovo_assembly --no_error_correction TRUE
+```
 ##### assemble_amplicons
 
-Assemble contigs using reference sequence and amplicon regions. Input is contigs and reference sequence in FASTA format and amplicon regions in GTF format.
+Assemble contigs from de novo assembly using both a reference sequence and amplicon regions with MUMMER 3+ ([documentation](http://mummer.sourceforge.net/manual/)). Input is contigs and reference sequence in FASTA format and amplicon regions in GTF format.
+Example to execute:
+```
+haphpipe assemble_amplicons --contigs_fa denovo_contigs.fa --ref_fa refSequence.fasta --ref_gtf refAmplicons.gtf
+```
 
 ##### assemble_scaffold
 
-Scaffold contigs using reference sequence. Input is contigs in FASTA format and reference sequence in FASTA format. Output is scaffold assembly, alligned scaffold, imputed scaffold, and padded scaffold in FASTA format.
+Scaffold contigs against a reference sequence with MUMMER 3+ ([documentation](http://mummer.sourceforge.net/manual/)). Input is contigs in FASTA format and reference sequence in FASTA format. Output is scaffold assembly, alligned scaffold, imputed scaffold, and padded scaffold in FASTA format.
+Example to execute:
+```
+haphpipe assemble_scaffold --contigs_fa denovo_contigs.fa --ref_fa refSequence.fasta
+```
 
 ##### align_reads
 
-Map reads to reference sequence. Input is reads in FASTQ format and reference sequence in FASTA format. 
+Map reads to reference sequence (instead of running de novo assembly) using Bowtie2 ([documentation](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)) and Picard ([documentation](https://broadinstitute.github.io/picard/)). Input is reads in FASTQ format and reference sequence in FASTA format. 
+Example to execute:
+```
+haphpipe align_reads --fq1 corrected_1.fastq --fq2 corrected _2.fastq --ref_fa refSequence.fasta
+```
 
 ##### call_variants
 
-Variant calling from alignment. Input is alignment file in BAM format and reference sequence in FASTA format. Output is a VCF format file. 
+Variant calling from alignment. Input is alignment file in BAM format and reference sequence in FASTA format (either reference from reference-based assembly or consensus final sequence from de novo assembly). Output is a Variant Call File (VCF) format file. 
+Example to execute:
+```
+haphpipe call_variants --aln_bam alignment.bam --ref_fa refSequence.fasta
+```
 
 ##### vcf_to_consensus
 
 Generate a consensus sequence from a VCF file. Input is a VCF file. Output is the consensus sequence in FASTA format. 
+Example to execute:
+```
+haphpipe vcf_to_consensus --vcf variants.vcf
+
+```
 
 ##### refine_assembly
 
-Map reads to a denovo assembly or reference alignment. Assembly or alignment is iteratively updated. Input is reads in FASTQ format and reference sequence (assembly or reference alignment) in FASTA format. Output is refined assembly in 
+Map reads to a denovo assembly or reference alignment. Assembly or alignment is iteratively updated. Input is reads in FASTQ format and reference sequence (assembly or reference alignment) in FASTA format. Output is refined assembly in FASTA format.
+Example to execute:
+```
+haphpipe refine_assembly --fq_1 corrected_1.fastq --fq2 corrected_2.fastq --ref_fa refSequence.fasta
+```
 
 ##### finalize_assembly
 
 Finalize consensus, map reads to consensus, and call variants. Input is reads in FASTQ format and reference sequence in FASTA format. Output is finalized reference sequence, alignment, and variants (in FASTA, BAM, and VCF formats, respectively).
-
+```
+haphpipe finalize_assembly --fq_1 corrected_1.fastq --fq2 corrected_2.fastq --ref_fa refined.fna 
+```
 
 ### hp_haplotype
 
-Reconstructing haplotypes. This is an active area of research. The user is required to install PredictHaplo on their own, prior to running these stages.
+Haplotype assembly stages. HAPHPIPE implements PredictHaplo ([paper](https://www.ncbi.nlm.nih.gov/pubmed/26355517_), although other haplotype reconstruction programs can be utilized outside of HAPHPIPE using the final output of HAPHPIPE, typically with the final consensus sequence (FASTA) file, reads (raw, trimmed, and/or corrected), and/or final alignment (BAM) file as input.
 
 ##### predict_haplo
 
-Assemble haplotypes with PredictHaplo. Input are the paired reads in FASTQ format and a reference sequence in FASTA format that is used to align the reads to. Output is reconstructed haplotypes in PredicHaplo's formats. The best (aka longest reconstructed haplotype) is used as the input for the complementary ph_parser stage below. 
+Haplotype identification with PredictHaplo. Input is reads in FASTQ format and and reference sequence in FASTA format. Output is the longest global haplotype file and corresponding HTML file. _Note: PredictHaplo must be installed separately before running this stage._ 
+Example to execute:
+```
+haphpipe predict_haplo corrected_1.fastq --fq2 corrected_2.fastq --ref_fa final.fna
+```
 
 ##### ph_parser
 
-Parse output from PredictHaplo. Input is the best.fsa file from the previous step, and the output includes a FASTA format with the reconstructed haplotypes and a summary text file that contains the number of haplotypes reconstructed, a Waterson's genetic diversity estimate, and the length of the reconstructed haplotypes. 
-
+Return PredictHaplo output as a correctly formatted FASTA file. Input is the output file from _predict_haplo_ (FASTA format). Output is a correctly formatted FASTA file.
+Example to execute:
+```
+haphpipe ph_parser best.fas
+```
 
 ### hp_annotate
 
-Annotate consensus sequences.
+Stages to annotate consensus sequences.
 
 ##### pairwise_align 
 
+Apply correct coordinate system to final sequence(s) to facilitate downstream analyses. Input is the final sequence file in FASTA format, a reference sequence in FASTA format, and a reference GFT file. Output is a JSON file to be used in _extract_pairwise_.
+Example to execute:
+```
+haphpipe pairwise_align --amplicons_fa final.fna --ref_fa refSequence.fasta --ref_gtf referenceSeq.gtf
+```
+
 ##### extract_pairwise
+
+Extract sequence regions from the pairwise alignment produced in _pairwise_align_. Input is the JSON file from _pairwise_align_. Output is either an unaligned nucleotide FASTA file, an aligned nucleotide FASTA file, an amino acid FASTA file, an amplicon GTF file, or a tab-separated values (TSV) file (default: nucleotide FASTA with regions of interest from GTF file used in _pairwise_align_). 
+Example to execute:
+```
+haphpipe extract_pairwise --align_json pairwise_aligned.json --refreg HIV_B.K03455.HXB2:2085-5096
+```
 
 ##### annotate_from_ref
 
-
+Annotate consensus sequence from reference annotation. Input is JSON file from _pairwise_align_ and reference GTF file. 
+Example to execute:
+```
+haphpipe annotate_from_ref airwise_aligned.json --ref_gtf referenceSeq.gtf
+```
