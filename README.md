@@ -206,7 +206,7 @@ haphpipe predict_haplo corrected_1.fastq --fq2 corrected_2.fastq --ref_fa final.
 
 ##### ph_parser
 
-Return PredictHaplo output as a correctly formatted FASTA file. Input is the output file from _predict_haplo_ (FASTA format). Output is a correctly formatted FASTA file.
+Return PredictHaplo output as a correctly formatted FASTA file. Input is the output file from _predict_haplo_ (longest global .fas file). Output is a correctly formatted FASTA file.
 Example to execute:
 ```
 haphpipe ph_parser best.fas
