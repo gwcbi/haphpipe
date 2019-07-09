@@ -86,9 +86,9 @@ More detailed description of command line options for each stage are available i
 haphpipe -h
 ```
 
-[TODO] Finish describing each haphpipe stage. 
 
-### hp_reads
+
+### Reads
 
 Stages to manipulate reads and perform quality control. Input is reads in FASTQ format, output is modified reads in FASTQ format.
 
@@ -124,7 +124,7 @@ Example to execute:
 haphpipe ec_reads --fq1 trimmed_1.fastq --fq2 trimmed_2.fastq
 ```
 
-### hp_assemble
+### Assemble
 
 Assemble consensus sequence(s). Input reads (in FASTQ format) are assembled 
 using either denovo assembly or reference-based alignment. 
@@ -175,7 +175,6 @@ Generate a consensus sequence from a VCF file. Input is a VCF file. Output is th
 Example to execute:
 ```
 haphpipe vcf_to_consensus --vcf variants.vcf
-
 ```
 
 ##### refine_assembly
@@ -193,9 +192,9 @@ Finalize consensus, map reads to consensus, and call variants. Input is reads in
 haphpipe finalize_assembly --fq_1 corrected_1.fastq --fq2 corrected_2.fastq --ref_fa refined.fna 
 ```
 
-### hp_haplotype
+### Haplotype
 
-Haplotype assembly stages. HAPHPIPE implements PredictHaplo ([paper](https://www.ncbi.nlm.nih.gov/pubmed/26355517_)), although other haplotype reconstruction programs can be utilized outside of HAPHPIPE using the final output of HAPHPIPE, typically with the final consensus sequence (FASTA) file, reads (raw, trimmed, and/or corrected), and/or final alignment (BAM) file as input.
+Haplotype assembly stages. HAPHPIPE implements PredictHaplo ([paper](https://www.ncbi.nlm.nih.gov/pubmed/26355517)), although other haplotype reconstruction programs can be utilized outside of HAPHPIPE using the final output of HAPHPIPE, typically with the final consensus sequence (FASTA) file, reads (raw, trimmed, and/or corrected), and/or final alignment (BAM) file as input.
 
 ##### predict_haplo
 
@@ -213,7 +212,7 @@ Example to execute:
 haphpipe ph_parser best.fas
 ```
 
-### hp_annotate
+### Annotate
 
 Stages to annotate consensus sequences.
 
