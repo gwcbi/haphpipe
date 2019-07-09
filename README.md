@@ -163,7 +163,7 @@ haphpipe align_reads --fq1 corrected_1.fastq --fq2 corrected _2.fastq --ref_fa r
 
 ##### call_variants
 
-Variant calling from alignment. Input is alignment file in BAM format and reference sequence in FASTA format (either reference from reference-based assembly or consensus final sequence from de novo assembly). Output is a Variant Call File (VCF) format file. 
+Variant calling from alignment using GATK ([documentation](https://software.broadinstitute.org/gatk/download/archive)). Input is alignment file in BAM format and reference sequence in FASTA format (either reference from reference-based assembly or consensus final sequence from de novo assembly). Output is a Variant Call File (VCF) format file. 
 Example to execute:
 ```
 haphpipe call_variants --aln_bam alignment.bam --ref_fa refSequence.fasta
