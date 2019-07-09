@@ -58,10 +58,9 @@ __4. Install HAPHPIPE__
 pip install git+git://github.com/gwcbi/haphpipe.git
 ```
 
+
+
 ## Pipelines
-
-
-[TODO] describe pipelines
 
 ##### `haphpipe_assemble_01`
 
@@ -75,12 +74,15 @@ This pipeline implements amplicon assembly using a reference-based mapping
 approach. Reads are error-corrected and used to refine the initial assembly,
 with up to 5 refinement steps.
 
+See more information regarding the pipelines at the [wiki](https://github.com/gwcbi/haphpipe/wiki/Example-Pipelines).
+
+
+
 ## Stages
 
 Each stage can be run on its own. Stages are grouped into 4 categories: hp_reads, hp_assemble, hp_haplotype, and hp_annotate.
 More detailed description of command line options for each stage are available in the [wiki](https://github.com/gwcbi/haphpipe/wiki).
 
-[TODO] Finish describing each haphpipe stage. 
 
 ### hp_reads
 
@@ -101,6 +103,7 @@ Join reads using FLASH. Input is reads in fastq format. Output is joined reads i
 ##### ec_reads
 
 Error correction using spades. Input is reads in fastq format. Output is error-corrected reads in fastq format.
+
 
 ### hp_assemble
 
@@ -140,21 +143,25 @@ Map reads to a denovo assembly or reference alignment. Assembly or alignment is 
 
 Finalize consensus, map reads to consensus, and call variants. Input is reads in FASTQ format and reference sequence in FASTA format. Output is finalized reference sequence, alignment, and variants (in FASTA, BAM, and VCF formats, respectively).
 
+
 ### hp_haplotype
 
-Assembly stages.
+Reconstructing haplotypes. This is an active area of research. The user is required to install PredictHaplo on their own, prior to running these stages.
 
 ##### predict_haplo
 
+Assemble haplotypes with PredictHaplo. Input are the paired reads in FASTQ format and a reference sequence in FASTA format that is used to align the reads to. Output is reconstructed haplotypes in PredicHaplo's formats. The best (aka longest reconstructed haplotype) is used as the input for the complementary ph_parser stage below. 
+
 ##### ph_parser
+
+Parse output from PredictHaplo. Input is the best.fsa file from the previous step, and the output includes a FASTA format with the reconstructed haplotypes and a summary text file that contains the number of haplotypes reconstructed, a Waterson's genetic diversity estimate, and the length of the reconstructed haplotypes. 
+
 
 ### hp_annotate
 
 Annotate consensus sequences.
 
 ##### pairwise_align 
-
-##### post_assembly
 
 ##### extract_pairwise
 
