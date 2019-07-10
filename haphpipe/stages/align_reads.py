@@ -9,6 +9,7 @@ import argparse
 from haphpipe.utils import helpers
 from haphpipe.utils import sysutils
 from haphpipe.utils.sysutils import MissingRequiredArgument
+from haphpipe.utils.sysutils import PipelineStepError
 
 
 
@@ -173,18 +174,25 @@ def align_reads(
     elif input_reads in ['single', 'both', ]:
         cmd5 += ['-U', fqU, ]
     cmd5 += ['-S', os.path.join(tempdir, 'tmp.sam'), ]
-    cmd5 += ['2>&1', '|', 'tee', out_bt2, ]
-    cmd6a = [
+    cmd5 += ['2>', out_bt2, ]
+
+    try:
+        sysutils.command_runner(
+            [cmd5,], 'align_reads:bowtie2', quiet, logfile, debug
+        )
+    except PipelineStepError as e:
+        if os.path.exists(out_bt2):
+            with open(out_bt2, 'r') as fh:
+                print('[--- bowtie2 stderr ---]\n%s' % fh.read(), file=sys.stderr)
+        raise
+
+    cmd6 = [
         'samtools', 'view', '-u', os.path.join(tempdir, 'tmp.sam'), '|',
         'samtools', 'sort', '>', os.path.join(tempdir, 'sorted.bam'),
     ]
-    # cmd6b = ['samtools', 'sort', os.path.join(tempdir, 'unsorted.bam'),
-    # os.path.join(tempdir, 'sorted'),]
-    cmd6c = ['samtools', 'index',  os.path.join(tempdir, 'sorted.bam'),]
-    # cmd7 = ['rm', '-f', os.path.join(tempdir, 'tmp.sam'), ]
-    #  os.path.join(tempdir, 'unsorted.bam'), ]
+    cmd7 = ['samtools', 'index',  os.path.join(tempdir, 'sorted.bam'),]
     sysutils.command_runner(
-        [cmd5, cmd6a, cmd6c,], 'align_reads:align', quiet, logfile, debug
+        [cmd6, cmd7,], 'align_reads:samsort', quiet, logfile, debug
     )
     
     cur_bam = os.path.join(tempdir, 'sorted.bam')

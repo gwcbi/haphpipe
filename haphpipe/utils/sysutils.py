@@ -17,10 +17,25 @@ __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 
 class PipelineStepError(Exception):
-    pass
+    """ Exception raised for pipeline errors
+        Attributes:
+            msg -- explanation of the error
+            returncode -- exit code of failed command, if applicable
+    """
+    def __init__(self, msg, returncode=None):
+        self.msg = msg
+        self.returncode = returncode
+
+    def __str__(self):
+        ret = super(PipelineStepError, self).__str__()
+        if self.returncode:
+            ret += '\nreturncode: %d' % self.returncode
+        return ret
 
 
 class MissingRequiredArgument(Exception):
+    """ Exception raised when required argument is missing
+    """
     pass
 
 
@@ -126,7 +141,15 @@ def command_runner(cmds, stage=None, quiet=False, logfile=None, debug=False):
     )
     for line in p.stdout:
         log_message(line.decode("utf-8"), quiet, logfile)
-    p.wait()
+
+    returncode = p.wait()
+
+    if returncode != 0:
+        raise PipelineStepError(
+            '\n[--- FAILED: %s ---]\nCommand:\n%s' % (stage, cmdstr),
+            returncode=returncode
+        )
+
     return
 
 

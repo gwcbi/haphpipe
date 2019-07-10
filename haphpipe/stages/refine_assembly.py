@@ -25,6 +25,7 @@ from haphpipe.stages import call_variants
 from haphpipe.stages import vcf_to_consensus
 from haphpipe.stages import sample_reads
 from haphpipe.utils.sysutils import MissingRequiredArgument
+from haphpipe.utils.sysutils import PipelineStepError
 
 
 __author__ = 'Matthew L. Bendall'
@@ -205,8 +206,15 @@ def progressive_refine_assembly(
 
         # Check new alignment rate
         with open(tmp_bt2, 'rU') as fh:
-            m = re.search('(\d+\.\d+)\% overall alignment rate', fh.read())
-            new_alnrate = float(m.group(1))
+            bt2str = fh.read()
+            m = re.search('(\d+\.\d+)\% overall alignment rate', bt2str)
+            if m is None:
+                msg = "Alignment rate not found in bowtie2 output."
+                msg += "Output file contents:\n%s\n" % bt2str
+                msg += "Aborting."
+                raise PipelineStepError(msg)
+            else:
+                new_alnrate = float(m.group(1))
 
         # Create messages for log
         row = [str(i), '%.02f' % new_alnrate, '%d' % sum(diffs), ]
