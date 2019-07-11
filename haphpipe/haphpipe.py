@@ -33,6 +33,9 @@ from haphpipe.stages import pairwise_align
 from haphpipe.stages import extract_pairwise
 from haphpipe.stages import annotate_from_ref
 # from haphpipe.stages import post_assembly
+# Miscellaneous
+from haphpipe.stages import demo
+
 
 BASE_USAGE = '''
 Program: haphpipe (haplotype and phylodynamics pipeline)
@@ -63,6 +66,9 @@ Commands:
     pairwise_align           align consensus to an annotated reference
     extract_pairwise         extract sequence regions from pairwise alignment
     annotate_from_ref        annotate consensus from reference annotation
+
+ -- Miscellaneous
+    demo                     setup demo directory and test data
 '''
 
 
@@ -157,6 +163,11 @@ def console():
     # post_assembly.stageparser(
     #     sub.add_parser('post_assembly', formatter_class=HF)
     # )
+
+    # Miscellaneous
+    demo.stageparser(
+        sub.add_parser('demo', formatter_class=HF)
+    )
 
     args = parser.parse_args()
     try:

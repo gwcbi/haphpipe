@@ -143,7 +143,7 @@ def refine_assembly_step(
     shutil.copy(tmp_bt2, out_bt2)
 
     if not keep_tmp:
-        pass # sysutils.remove_tempdir(tempdir, 'refine_assembly', quiet, logfile)
+        sysutils.remove_tempdir(tempdir, 'refine_assembly', quiet, logfile)
 
     return out_refined, out_bt2
 
