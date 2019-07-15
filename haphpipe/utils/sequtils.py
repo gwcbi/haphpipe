@@ -155,9 +155,17 @@ def get_ambig(bases):
 
 
 def region_to_tuple(regstr):
-    chrom = regstr.split(':')[0]
-    reg_s, reg_e = list(map(int, regstr.split(':')[1].split('-')))
-    return chrom, reg_s, reg_e
+    """ Parse region string
+        Region string format is RNAME[:STARTPOS[-ENDPOS]]. If STARTPOS or ENDPOS are not
+        present, None is returned.
+    """
+    m = re.match('(?P<ref>[^\s:]+)(:(?P<spos>\d+)(-(?P<epos>\d+))?)?', regstr)
+    if not m:
+        return None, None, None
+    else:
+        spos = int(m.group('spos')) if m.group('spos') is not None else None
+        epos = int(m.group('epos')) if m.group('epos') is not None else None
+        return m.group('ref'), spos, epos
 
 
 def parse_seq_id(s, delim='|'):
