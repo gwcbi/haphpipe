@@ -173,7 +173,7 @@ def align_reads(
         cmd5 += ['-1', fq1, '-2', fq2,]
     elif input_reads in ['single', 'both', ]:
         cmd5 += ['-U', fqU, ]
-    cmd5 += ['-S', os.path.join(tempdir, 'tmp.sam'), ]
+    cmd5 += ['-S', os.path.join(tempdir, 'aligned.bt2.sam'), ]
     cmd5 += ['2>', out_bt2, ]
 
     try:
@@ -187,7 +187,7 @@ def align_reads(
         raise
 
     cmd6 = [
-        'samtools', 'view', '-u', os.path.join(tempdir, 'tmp.sam'), '|',
+        'samtools', 'view', '-u', os.path.join(tempdir, 'aligned.bt2.sam'), '|',
         'samtools', 'sort', '>', os.path.join(tempdir, 'sorted.bam'),
     ]
     cmd7 = ['samtools', 'index',  os.path.join(tempdir, 'sorted.bam'),]
