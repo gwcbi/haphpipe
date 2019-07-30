@@ -184,9 +184,17 @@ def vcf_to_consensus(
     with open(out_fasta, 'w') as outh:
         for chrom in chrom_ordered:
             new_seqid = sequtils.update_seq_id(chrom, samples[sampidx])
-            print('>%s SM:%s' % (new_seqid, samples[sampidx]), file=outh)
-            ns = ''.join(newseqs[chrom])
-            print(sequtils.wrap(ns.replace('.', 'n')), file=outh)
+            new_seq = ''.join(newseqs[chrom]).replace('.', 'n')
+            m = re.match('^(?P<pre>n*)(?P<seq>[^n].+[^n])?(?P<suf>n*)$', new_seq)
+            if m.group('seq') is None:
+                msg = u'%s\tFAIL\t%d\t%s\n' % (new_seqid, 0, u"👎🏼")
+                # Don't output sequence if not present
+            else:
+                msg = u'%s\tPASS\t%d\t%s\n' % (new_seqid, len(m.group('seq')), u"👍🏼")
+                print('>%s SM:%s' % (new_seqid, samples[sampidx]), file=outh)
+                print(sequtils.wrap(new_seq), file=outh)
+
+            sysutils.log_message(msg, quiet, logfile)
 
     return out_fasta
 

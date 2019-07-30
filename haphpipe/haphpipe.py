@@ -34,7 +34,7 @@ from haphpipe.stages import extract_pairwise
 from haphpipe.stages import annotate_from_ref
 # from haphpipe.stages import post_assembly
 # Miscellaneous
-from haphpipe.stages import demo
+### from haphpipe.stages import demo
 
 
 BASE_USAGE = '''
@@ -165,9 +165,9 @@ def console():
     # )
 
     # Miscellaneous
-    demo.stageparser(
-        sub.add_parser('demo', formatter_class=HF)
-    )
+    # demo.stageparser(
+    #     sub.add_parser('demo', formatter_class=HF)
+    # )
 
     args = parser.parse_args()
     try:

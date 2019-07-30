@@ -127,7 +127,7 @@ if [[ -e ${outdir}/refined.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage refined.fna"
 else
     read -r -d '' cmd <<EOF
-hp_refine_assembly\
+haphpipe refine_assembly\
  --ncpu $ncpu\
  --fq1 ${outdir}/corrected_1.fastq\
  --fq2 ${outdir}/corrected_2.fastq\
@@ -154,7 +154,7 @@ if [[ -e ${outdir}/final.fna && -e ${outdir}/final.bam && -e ${outdir}/final.vcf
     echo "[---$SN---] ($(date)) EXISTS: $stage final.fna,final.bam,final.vcf.gz"
 else
     read -r -d '' cmd <<EOF
-hp_finalize_assembly\
+haphpipe finalize_assembly\
  --ncpu $ncpu\
  --fq1 ${outdir}/corrected_1.fastq\
  --fq2 ${outdir}/corrected_2.fastq\

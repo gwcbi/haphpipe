@@ -14,6 +14,7 @@ import shutil
 import re
 import argparse
 import random
+from collections import OrderedDict
 
 from Bio import SeqIO
 from Bio import pairwise2
@@ -160,24 +161,21 @@ def progressive_refine_assembly(
     out_bt2 = os.path.join(outdir, 'refined_bt2.out')
     out_summary = os.path.join(outdir, 'refined_summary.out')
 
-    # Initialize
-    seq_ids = []
+    #--- Initialize
     cur_asm = ref_fa
     cur_alnrate = None
-    cur_seqs = {}
-
+    assemblies = [OrderedDict(), ]
     for s in SeqIO.parse(cur_asm, 'fasta'):
-        seq_ids.append(s.id)
-        cur_seqs[s.id] = s
-
+        assemblies[-1][s.id] = s
+    
     # Message log for summary
     summary = [
-        ['iteration', 'alnrate', 'diffs'] + ['diff:%s' % s for s in seq_ids]
+        ['iteration', 'alnrate', 'diffs'] + ['diff:%s' % s for s in assemblies[0].keys()]
     ]
 
     # Seed random number generator
     random.seed(seed)
-
+    
     for i in range(1, max_step+1):
         # Generate a refined assembly
         tmp_refined, tmp_bt2 = refine_assembly_step(
@@ -188,21 +186,19 @@ def progressive_refine_assembly(
         )
 
         # Check whether alignments are different
-        new_seqs = {s.id: s for s in SeqIO.parse(tmp_refined, 'fasta')}
-        diffs = []
-        for sid in seq_ids:
-            # Identify which sequences should be compared
-            poss1 = [k for k in new_seqs.keys() if sequtils.seqid_match(sid, k)]
-            assert len(poss1) == 1
-            s1 = new_seqs[poss1[0]].seq
-            poss2 = [k for k in cur_seqs.keys() if sequtils.seqid_match(sid, k)]
-            assert len(poss2) == 1
-            s2 = cur_seqs[poss2[0]].seq
-            alns = pairwise2.align.globalms(
-                s1, s2, 2, -1, -3, -1
-            )
+        diffs = OrderedDict()
+        new_seqs = OrderedDict((s.id, s) for s in SeqIO.parse(tmp_refined, 'fasta'))
+        for id1, seq1 in new_seqs.items():
+            poss0 = [k for k in assemblies[-1].keys() if sequtils.seqid_match(id1, k)]
+            if len(poss0) == 1:
+                seq0 = assemblies[-1][poss0[0]]
+            else:
+                raise PipelineStepError("Could not match sequence %s" % id1)
+            alns = pairwise2.align.globalms(seq1.seq, seq0.seq, 2, -1, -3, -1)
             d = min(sum(nc != cc for nc, cc in zip(t[0], t[1])) for t in alns)
-            diffs.append(d)
+            diffs[id1] = d
+
+        total_diffs = sum(diffs.values())
 
         # Check new alignment rate
         with open(tmp_bt2, 'rU') as fh:
@@ -217,17 +213,25 @@ def progressive_refine_assembly(
                 new_alnrate = float(m.group(1))
 
         # Create messages for log
-        row = [str(i), '%.02f' % new_alnrate, '%d' % sum(diffs), ]
-        row += list(map(str, diffs))
+        row = [str(i), '%.02f' % new_alnrate, '%d' % total_diffs, ]
+        for k0 in assemblies[0].keys():
+            poss1 = [k for k in diffs.keys() if sequtils.seqid_match(k, k0)]
+            if len(poss1) == 0:
+                row.append('FAIL')
+            elif len(poss1) == 1:
+                row.append(str(diffs[poss1[0]]))
+            else:
+                raise PipelineStepError("Multiple matches for %s" % k0)
+        ######row += list(map(str, diffs.values()))
         summary.append(row)
 
         # Create messages for console
         sysutils.log_message('\nRefinement result:\n', quiet, logfile)
         sysutils.log_message('\tDifferences:\n', quiet, logfile)
-        for s,d in zip(seq_ids, diffs):
+        for s,d in diffs.items():
             sysutils.log_message('\t\t%s\t%d\n' % (s,d), quiet, logfile)
-        if sum(diffs) > 0:
-            msg = '\t%d differences found with previous\n' % sum(diffs)
+        if total_diffs > 0:
+            msg = '\t%d differences found with previous\n' % total_diffs
         else:
             msg = '\tNo differences with previous\n'
         sysutils.log_message(msg, quiet, logfile)
@@ -244,10 +248,9 @@ def progressive_refine_assembly(
 
         # Decide whether to keep going
         keep_going = True
-        if sum(diffs) == 0:
+        if total_diffs == 0:
             keep_going = False
-            msg = 'Stopping because no differences found\n'
-            sysutils.log_message(msg, quiet, logfile)
+            sysutils.log_message('Stopping: no differences found\n', quiet, logfile)
 
         # We should also quit if alignment rate does not improve
         # However, subsampling reads can lead to changes in alignment rate
@@ -256,12 +259,12 @@ def progressive_refine_assembly(
         if subsample is None: # not subsampling
             if cur_alnrate is not None and new_alnrate <= cur_alnrate:
                 keep_going = False
-                msg = 'Stopping because alignment rate did not improve\n'
+                msg = 'Stopping: alignment rate did not improve\n'
                 sysutils.log_message(msg, quiet, logfile)
-
+        
         cur_asm = tmp_refined
         cur_alnrate = new_alnrate
-        cur_seqs = new_seqs
+        assemblies.append(new_seqs)
 
         if not keep_going:
             break
