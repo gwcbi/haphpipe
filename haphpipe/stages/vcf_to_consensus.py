@@ -80,7 +80,7 @@ def stageparser(parser):
                         help='Index for sample if multi-sample VCF')
 
     group2 = parser.add_argument_group('Variant options')
-    group2.add_argument('--min_dp', type=int, default=1,
+    group2.add_argument('--min_dp', type=int, default=5,
                         help='Minimum depth to call site')
     group2.add_argument('--major', type=float, default=0.5,
                         help='Allele fraction to make unambiguous call')
@@ -103,7 +103,7 @@ def stageparser(parser):
 
 def vcf_to_consensus(
         vcf=None, outdir='.',
-        sampidx=0, min_dp=1, major=0.5, minor=0.2,
+        sampidx=0, min_dp=5, major=0.5, minor=0.2,
         keep_tmp=False, quiet=False, logfile=None,
     ):
     """ Pipeline step to create consensus sequence from VCF
