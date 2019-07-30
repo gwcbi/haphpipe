@@ -14,6 +14,8 @@ import shutil
 from Bio import SeqIO
 
 from haphpipe.utils import sysutils
+from haphpipe.utils import sequtils
+from haphpipe.utils.sysutils import PipelineStepError
 
 
 __author__ = 'Matthew L. Bendall'
@@ -132,9 +134,10 @@ def stageparser(parser):
                         help='Fastq file with read 2')
     group1.add_argument('--ref_fa', type=sysutils.existing_file, required=True,
                         help='Reference sequence used to align reads (fasta)')
-    group1.add_argument('--interval_txt', type=sysutils.existing_file,
-                        help='''File with intervals to perform haplotype
-                                reconstruction''')
+    group1.add_argument('--region_txt', type=sysutils.existing_file,
+                        help='''File with regions to perform haplotype reconstruction. 
+                                Regions should be specified using the samtools region 
+                                specification format: RNAME[:STARTPOS[-ENDPOS]]''')
     group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
                         help='Output directory')
     
@@ -157,7 +160,7 @@ def stageparser(parser):
 
 
 def predict_haplo(
-        fq1=None, fq2=None, ref_fa=None, interval_txt=None, outdir='.',
+        fq1=None, fq2=None, ref_fa=None, region_txt=None, outdir='.',
         min_readlength=36,
         keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
@@ -167,7 +170,7 @@ def predict_haplo(
         fq1 (str): Path to fastq file with read 1
         fq2 (str): Path to fastq file with read 2
         ref_fa (str): Path to reference fasta file
-        interval_txt (str): Path to interval file
+        region_txt (str): Path to region file
         outdir (str): Path to output directory
         min_readlength (int): Minimum readlength passed to PredictHaplo
         keep_tmp (bool): Do not delete temporary directory
@@ -182,95 +185,99 @@ def predict_haplo(
     # Check dependencies
     sysutils.check_dependency('PredictHaplo-Paired')
     sysutils.check_dependency('bwa')
-    
+
     # Temporary directory
     tempdir = sysutils.create_tempdir('predict_haplo', None, quiet, logfile)
-
-    # Create alignment
-    tmp_ref_fa = os.path.join(tempdir, 'ref.fa')
-    tmp_sam = os.path.join(tempdir, 'aligned.sam')
-    shutil.copy(ref_fa, tmp_ref_fa)
-    cmd1 = ['bwa', 'index', tmp_ref_fa, ]
-    cmd2 = ['bwa', 'mem', tmp_ref_fa, fq1, fq2, '>', tmp_sam, ]
-    sysutils.command_runner(
-        [cmd1, cmd2, ], 'predict_haplo:setup', quiet, logfile, debug
-    )
-
-    # Set up parameters
-    ph_params = dict(DEFAULTS)
-    ph_params['min_readlength'] = min_readlength
-    ph_params['alignment'] = 'aligned.sam'
 
     # Load reference fasta
     refs = {s.id:s for s in SeqIO.parse(ref_fa, 'fasta')}
 
-    # Load intervals
-    recon_intervals = []
-    if interval_txt:
-        print('Found intervals file...', file=sys.stderr)
-        for l in open(interval_txt, 'rU'):
-            chrom = l.split(':')[0]
-            s, e = tuple(map(int, l.split(':')[1].split('-')))
-            recon_intervals.append((chrom, s, e))
+    # Identify reconstruction regions
+    regions = []
+    if region_txt:
+        sysutils.log_message('Found regions file.\n', quiet, logfile)  
+        for l in open(region_txt, 'r'):
+            rname, spos, epos = sequtils.region_to_tuple(l.strip())
+            if rname not in refs:
+                raise PipelineStepError("ERROR: reference %s not valid" % rname)
+            spos = 1 if spos is None else spos
+            epos = len(refs[rname]) if epos is None else epos
+            regions.append(('PH%02d' % (len(regions)+1), rname, spos, epos))
     else:
-        for sid, s in refs.items():
-            recon_intervals.append((sid, 1, len(s)))
-
-    sysutils.log_message('[--- Haplotype Reconstruction Regions ---]\n', quiet, logfile)
-    for iv in recon_intervals:
-        sysutils.log_message('%s:%d-%d\n' % iv, quiet, logfile)
+        for rname, s in refs.items():
+            regions.append(('PH%02d' % (len(regions)+1), rname, 1, len(s)))
     
-    # Setup runs
-    runs = []
-    for i, iv in enumerate(recon_intervals):
-        run_name = 'PH%02d' % (i+1)
-        msg = "Reconstruction region %s:" % run_name
-        msg += " %s:%d-%d\n" % (iv[0], iv[1], iv[2])
+    sysutils.log_message('[--- Haplotype Reconstruction Regions ---]\n', quiet, logfile)
+    for iv in regions:
+        sysutils.log_message('%s -- %s:%d-%d\n' % iv, quiet, logfile)
+    
+    # Create alignment for each REFERENCE in the reconstruction regions
+    alnmap = {}
+    for ph, rname, spos, epos in regions:
+        if rname not in alnmap:
+            # Create alignment
+            tmp_ref_fa = os.path.join(tempdir, 'ref.%d.fa' % len(alnmap))
+            tmp_sam = os.path.join(tempdir, 'aligned.%d.sam' % len(alnmap))
+            SeqIO.write(refs[rname], tmp_ref_fa, 'fasta')
+            cmd1 = ['bwa', 'index', tmp_ref_fa, ]
+            cmd2 = ['bwa', 'mem', tmp_ref_fa, fq1, fq2, '|', 'samtools', 'view', '-h', '-F', '12', '>', tmp_sam, ]
+            cmd3 = ['rm', '-f', '%s.*' % tmp_ref_fa]
+            sysutils.command_runner(
+                [cmd1, cmd2, cmd3], 'predict_haplo:setup', quiet, logfile, debug
+            )
+            alnmap[rname] = (tmp_ref_fa, tmp_sam)
+    
+    best_fa = []
+    # Run PredictHaplo for each REGION
+    for ph, rname, spos, epos in regions:
+        msg = "Reconstruction region %s:" % ph
+        msg += " %s:%d-%d\n" % (rname, spos, epos)
         sysutils.log_message(msg, quiet, logfile)
-
+        
         # Construct params specific for region
-        reg_params = dict(ph_params)
-        reg_params['reconstruction_start'] = iv[1]
-        reg_params['reconstruction_stop'] = iv[2]
-        reg_params['prefix'] = '%s_out.' % run_name
-
-        # Create single reference FASTA
-        _ref_fa = '%s_ref.fasta' % run_name
-        SeqIO.write(refs[iv[0]], os.path.join(tempdir, _ref_fa), 'fasta')
-        reg_params['ref_fasta'] = _ref_fa
+        reg_params = dict(DEFAULTS)
+        reg_params['min_readlength'] = min_readlength        
+        reg_params['reconstruction_start'] = spos
+        reg_params['reconstruction_stop'] = epos
+        reg_params['prefix'] = '%s_out.' % ph
+        
+        # Lookup reference and alignment filename 
+        reg_params['ref_fasta'] = os.path.basename(alnmap[rname][0])
+        reg_params['alignment'] = os.path.basename(alnmap[rname][1])
 
         # Create config file for region
-        config_file = '%s.config' % run_name
+        config_file = '%s.config' % ph
         with open(os.path.join(tempdir, config_file), 'w') as outh:
             tmpconfig = config_template % reg_params
             print(tmpconfig.replace('###', '%'), file=outh)
+        try:
+            # Run PredictHaplo
+            cmd1 = ['cd', tempdir, ]
+            cmd2 = ['PredictHaplo-Paired', config_file, '&>', '%s.log' % config_file]
+            sysutils.command_runner(
+                [cmd1, cmd2,], 'predict_haplo:%s' % ph, quiet, logfile, debug
+            )
 
-        run_cmd = ['PredictHaplo-Paired', config_file, '&>', '%s.log' % config_file]
-        runs.append((run_name, run_cmd))
-
-    # Run PredictHaplo
-    best_fa = []
-    cmd0 = ['cd', tempdir, ]
-    for run_name, run_cmd in runs:
-        sysutils.command_runner(
-            [cmd0, run_cmd], 'predict_haplo:%s' % run_name, quiet, logfile, debug
-        )
-        if debug: continue
-        # Copy results to output directory
-        dest = os.path.join(outdir, run_name)        
-        if not os.path.exists(dest):
-            os.makedirs(dest)
-        shutil.copy(os.path.join(tempdir, '%s.config.log' % run_name), dest)
-        for f in glob(os.path.join(tempdir, '%s_out*global*.fas' % run_name)):
-            shutil.copy(f, dest)
-        for f in glob(os.path.join(tempdir, '%s_out*global*.html' % run_name)):
-            shutil.copy(f, dest)
-        bf, bh = rename_best(dest, run_name)
-        best_fa.append(bf)
+            # Copy files
+            dest = os.path.join(outdir, ph)
+            if not os.path.exists(dest):
+                os.makedirs(dest)              
+            shutil.copy(os.path.join(tempdir, '%s.config.log' % ph), dest)
+            for f in glob(os.path.join(tempdir, '%s_out*global*.fas' % ph)):
+                shutil.copy(f, dest)
+            for f in glob(os.path.join(tempdir, '%s_out*global*.html' % ph)):
+                shutil.copy(f, dest)
+            bf, bh = rename_best(dest, ph)
+            best_fa.append((ph, bf))
+        except PipelineStepError as e:
+            print(e, file=sys.stderr)
+            if e.returncode == 139:
+                print("PredictHaplo segfaulted", file=sys.stderr)
+            best_fa.append((ph, None))
     
     if not keep_tmp:
-         sysutils.remove_tempdir(tempdir, 'predict_haplo', quiet, logfile)
-    
+        sysutils.remove_tempdir(tempdir, 'predict_haplo', quiet, logfile)
+
     return best_fa
 
 
