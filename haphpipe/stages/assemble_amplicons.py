@@ -47,7 +47,9 @@ def stageparser(parser):
                         help='Sample ID.')
     group2.add_argument('--padding', type=int, default=50,
                         help='Bases to include outside reference annotation.')
-        
+    group2.add_argument('--min_contig_len', type=int, default=200,
+                        help='Minimum contig length for tiling path')
+
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--keep_tmp', action='store_true',
                         help='Additional options')
@@ -64,7 +66,7 @@ def stageparser(parser):
 
 def assemble_amplicons(
         contigs_fa=None, ref_fa=None, ref_gtf=None, outdir='.',
-        sample_id='sampleXX', padding=50,
+        sample_id='sampleXX', padding=50, min_contig_len=200,
         keep_tmp=False, quiet=False, logfile=None, debug=False
     ):
     """ Pipeline step to assemble contigs using reference and amplicon regions
@@ -76,6 +78,7 @@ def assemble_amplicons(
         outdir (str): Path to output directory
         sample_id (str): Name to append to scaffold sequence
         padding (int): Bases to include outside reference annotation
+        min_contig_len (int): Minimum contig length for tiling path
         keep_tmp (bool): Do not delete temporary directory
         quiet (bool): Do not write output to console
         logfile (file): Append console output to this file
@@ -127,7 +130,9 @@ def assemble_amplicons(
         
         # Align with nucmer 
         fil,til = alignutils.align_nucmer(
-            tmp_contigs_fa, amplicon_fa, tempdir, quiet, logfile, debug
+            tmp_contigs_fa, amplicon_fa, tempdir,
+            min_contig_len=min_contig_len,
+            quiet=quiet, logfile=logfile, debug=debug
         )
 
         # Skip everything else if debugging

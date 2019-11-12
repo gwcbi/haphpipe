@@ -345,7 +345,8 @@ def align_promer(
 
 
 def align_nucmer(
-        query_fa, ref_fa, outdir, quiet=False, logfile=None, debug=False
+        query_fa, ref_fa, outdir, min_contig_len=200,
+        quiet=False, logfile=None, debug=False
     ):
     """
 
@@ -384,7 +385,7 @@ def align_nucmer(
     cmd3 = ['show-tiling',
         '-a',
         '-i', '%.1f' % 0.6,
-        '-l', '%d' % 200,
+        '-l', '%d' % min_contig_len,
         '-v', '%.1f' % 60,
         out_fil,
         '>',
@@ -435,7 +436,10 @@ def assemble_to_ref(
 
     """
     # Align query to reference
-    fil, til = align_nucmer(qry_fa, ref_fa, outdir, quiet, logfile, debug)
+    fil, til = align_nucmer(
+        qry_fa, ref_fa, outdir,
+        quiet=quiet, logfile=logfile, debug=debug
+    )
     if debug:
         return None
 
