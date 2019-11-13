@@ -468,6 +468,7 @@ def assemble_to_ref(
         
         for tr in ranked:
             out = show_aligns(tr.ref, tr.qry, fil)
+            out = out.decode()
             # May be multiple alignments
             flag = False
             aln_reports = []
