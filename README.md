@@ -9,7 +9,7 @@ __1. Create a conda environment with the following dependencies__
 
 ```bash
 conda create -n haphpipe \
-    python \
+    python=3.7 \
     future \
     pyyaml \
     biopython \
