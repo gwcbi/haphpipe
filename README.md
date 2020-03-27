@@ -2,6 +2,7 @@
 
 _**HA**plotype and **PH**ylodynamics pipeline for viral assembly, population genetics, and phylodynamics._
 
+Our full User Guide is available [here](https://gwcbi.github.io/haphpipe_docs/).
 
 ## Installation
 
