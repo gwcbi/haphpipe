@@ -248,7 +248,7 @@ Phylogenetic stages. Multiple sequence alignment and building phylogeny options.
 ##### multiple_align 
 
 Align multiple sequences together using MAFFT. 
-Example to execute:
+Example to execute: #UPDATE
 ```
 haphpipe multiple_align --dir_list demo_dir_list.txt -ref_gtf referenceSeq.gtf --amplicons
 ```
