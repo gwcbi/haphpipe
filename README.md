@@ -4,6 +4,8 @@ _**HA**plotype and **PH**ylodynamics pipeline for viral assembly, population gen
 
 Our full User Guide is available [here](https://gwcbi.github.io/haphpipe_docs/).
 
+![schematic](haphpipe_schematic.png)
+
 ## Installation
 
 __1. Create a conda environment with the following dependencies__
