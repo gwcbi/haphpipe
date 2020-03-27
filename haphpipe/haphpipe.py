@@ -166,9 +166,9 @@ def console():
     annotate_from_ref.stageparser(
         sub.add_parser('annotate_from_ref', formatter_class=HF)
     )
-    summary_stats.stageparser(
-        sub.add_parser('summary_stats', formatter_class=HF)
-    )
+    #summary_stats.stageparser(
+    #    sub.add_parser('summary_stats', formatter_class=HF)
+    #)
     # post_assembly.stageparser(
     #     sub.add_parser('post_assembly', formatter_class=HF)
     # )
@@ -182,9 +182,9 @@ def console():
     #)
 
     # Miscellaneous
-    demo.stageparser(
-        sub.add_parser('demo', formatter_class=HF)
-    )
+    #demo.stageparser(
+    #    sub.add_parser('demo', formatter_class=HF)
+    #)
 
     args = parser.parse_args()
     try:
