@@ -70,10 +70,10 @@ Commands:
     pairwise_align           align consensus to an annotated reference
     extract_pairwise         extract sequence regions from pairwise alignment
     annotate_from_ref        annotate consensus from reference annotation
-    summary_stats            reports summary statistics for samples
+    summary_stats            generates summary statistics for samples
 
  -- Phylo
-    multiple_align           multiple sequence alignment
+    multiple_align           aligns sequences using MAFFT
 
  -- Miscellaneous
     demo                     setup demo directory and test data
