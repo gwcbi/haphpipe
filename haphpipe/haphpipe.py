@@ -35,9 +35,7 @@ from haphpipe.stages import annotate_from_ref
 #from haphpipe.stages import summary_stats
 # Phylo stages
 from haphpipe.stages import multiple_align
-from haphpipe.stages import extract_pairwise
-from haphpipe.stages import annotate_from_ref
-# from haphpipe.stages import post_assembly
+# from haphpipe.stages import build_tree
 
 # Miscellaneous
 #from haphpipe.stages import demo
@@ -72,6 +70,9 @@ Commands:
     pairwise_align           align consensus to an annotated reference
     extract_pairwise         extract sequence regions from pairwise alignment
     annotate_from_ref        annotate consensus from reference annotation
+
+ -- Phylo
+    multiple_align           multiple sequence alignment
 
  -- Miscellaneous
     demo                     setup demo directory and test data
