@@ -32,7 +32,7 @@ from haphpipe.stages import ph_parser
 from haphpipe.stages import pairwise_align
 from haphpipe.stages import extract_pairwise
 from haphpipe.stages import annotate_from_ref
-#from haphpipe.stages import summary_stats
+from haphpipe.stages import summary_stats
 # Phylo stages
 from haphpipe.stages import multiple_align
 # from haphpipe.stages import build_tree
@@ -70,6 +70,7 @@ Commands:
     pairwise_align           align consensus to an annotated reference
     extract_pairwise         extract sequence regions from pairwise alignment
     annotate_from_ref        annotate consensus from reference annotation
+    summary_stats            generates summary statistics for samples
 
  -- Phylo
     multiple_align           multiple sequence alignment
@@ -167,9 +168,9 @@ def console():
     annotate_from_ref.stageparser(
         sub.add_parser('annotate_from_ref', formatter_class=HF)
     )
-    #summary_stats.stageparser(
-    #    sub.add_parser('summary_stats', formatter_class=HF)
-    #)
+    summary_stats.stageparser(
+        sub.add_parser('summary_stats', formatter_class=HF)
+    )
     # post_assembly.stageparser(
     #     sub.add_parser('post_assembly', formatter_class=HF)
     # )

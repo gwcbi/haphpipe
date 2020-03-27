@@ -241,14 +241,23 @@ Example to execute:
 haphpipe annotate_from_ref airwise_aligned.json --ref_gtf referenceSeq.gtf
 ```
 
+##### summary_stats 
+
+Generates summary statistics for samples. Input in a TXT with a list of sample directories. Output is a TXT and TSV file.
+Example to execute:
+```
+haphpipe summary_stats --dir_list demo_dir_list.txt --amplicons
+```
+
 ### Phylo
 
 Phylogenetic stages. Multiple sequence alignment and building phylogeny options.
 
 ##### multiple_align 
 
-Align multiple sequences together using MAFFT. 
-Example to execute: #UPDATE
+Aligns sequences using MAFFT. Input is a FASTA file with sequences wanting aligned and/or a TXT file with a list of directories AND a reference GTF file.
+Example to execute: 
 ```
 haphpipe multiple_align --dir_list demo_dir_list.txt -ref_gtf referenceSeq.gtf --amplicons
 ```
+
