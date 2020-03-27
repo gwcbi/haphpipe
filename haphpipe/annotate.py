@@ -10,10 +10,12 @@ from haphpipe.stages import pairwise_align
 from haphpipe.stages import post_assembly
 from haphpipe.stages import extract_pairwise
 from haphpipe.stages import annotate_from_ref
+from haphpipe.stages import summary_stats
 
 
-__author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
+
+__author__ = 'Matthew L. Bendall and Keylie M. Gibson'
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall; (C) 2020 Keylie M. Gibson"
 
 
 def main():
@@ -31,6 +33,7 @@ def main():
     extract_pairwise.stageparser(sub.add_parser('extract_pairwise'))
     post_assembly.stageparser(sub.add_parser('post_assembly'))
     annotate_from_ref.stageparser(sub.add_parser('annotate_from_ref'))
+    summary_stats.stageparser(sub.add_parser('summary_stats'))
 
     args = parser.parse_args()
     args.func(**sysutils.args_params(args))

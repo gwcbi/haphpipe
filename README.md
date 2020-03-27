@@ -25,7 +25,8 @@ conda create -n haphpipe \
     gatk=3.8 \
     spades \
     blast \
-    sierrapy
+    sierrapy \
+    mafft
 
 ```
 
@@ -239,3 +240,24 @@ Example to execute:
 ```
 haphpipe annotate_from_ref airwise_aligned.json --ref_gtf referenceSeq.gtf
 ```
+
+##### summary_stats 
+
+Insert description here 
+Example to execute: #UPDATE
+```
+haphpipe summary_stats --dir_list demo_dir_list.txt --amplicons
+```
+
+### Phylo
+
+Phylogenetic stages. Multiple sequence alignment and building phylogeny options.
+
+##### multiple_align 
+
+Align multiple sequences together using MAFFT. 
+Example to execute: #UPDATE
+```
+haphpipe multiple_align --dir_list demo_dir_list.txt -ref_gtf referenceSeq.gtf --amplicons
+```
+
