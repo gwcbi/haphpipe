@@ -25,7 +25,8 @@ conda create -n haphpipe \
     gatk=3.8 \
     spades \
     blast \
-    sierrapy
+    sierrapy \
+    mafft
 
 ```
 

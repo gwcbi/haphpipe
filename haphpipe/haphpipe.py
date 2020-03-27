@@ -32,9 +32,15 @@ from haphpipe.stages import ph_parser
 from haphpipe.stages import pairwise_align
 from haphpipe.stages import extract_pairwise
 from haphpipe.stages import annotate_from_ref
+#from haphpipe.stages import summary_stats
+# Phylo stages
+from haphpipe.stages import multiple_align
+from haphpipe.stages import extract_pairwise
+from haphpipe.stages import annotate_from_ref
 # from haphpipe.stages import post_assembly
+
 # Miscellaneous
-### from haphpipe.stages import demo
+#from haphpipe.stages import demo
 
 
 BASE_USAGE = '''
@@ -160,14 +166,25 @@ def console():
     annotate_from_ref.stageparser(
         sub.add_parser('annotate_from_ref', formatter_class=HF)
     )
+    summary_stats.stageparser(
+        sub.add_parser('summary_stats', formatter_class=HF)
+    )
     # post_assembly.stageparser(
     #     sub.add_parser('post_assembly', formatter_class=HF)
     # )
 
+    # Phylo
+    multiple_align.stageparser(
+        sub.add_parser('multiple_align', formatter_class=HF)
+    )
+    #build_tree.stageparser(
+    #    sub.add_parser('build_tree', formatter_class=HF)
+    #)
+
     # Miscellaneous
-    # demo.stageparser(
-    #     sub.add_parser('demo', formatter_class=HF)
-    # )
+    demo.stageparser(
+        sub.add_parser('demo', formatter_class=HF)
+    )
 
     args = parser.parse_args()
     try:
