@@ -240,3 +240,15 @@ Example to execute:
 ```
 haphpipe annotate_from_ref airwise_aligned.json --ref_gtf referenceSeq.gtf
 ```
+
+### Phylo
+
+Phylogenetic stages. Multiple sequence alignment and building phylogeny options.
+
+##### multiple_align 
+
+Align multiple sequences together using MAFFT. 
+Example to execute:
+```
+haphpipe multiple_align --dir_list demo_dir_list.txt -ref_gtf referenceSeq.gtf --amplicons
+```
