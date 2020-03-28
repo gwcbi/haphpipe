@@ -13,13 +13,13 @@ setuptools.setup(name='haphpipe',
       scripts=[
           'bin/haphpipe_assemble_01',
           'bin/haphpipe_assemble_02',
-          'bin/haphpipe_demo',
+          #'bin/haphpipe_demo',
       ],
       entry_points={
           'console_scripts': [
               'haphpipe=haphpipe.haphpipe:console',
               # miscellaneous subcommands
-              'hp_demo=haphpipe.stages.demo:console',
+              #'hp_demo=haphpipe.stages.demo:console',
               # hp_reads subcommands
               'hp_sample_reads=haphpipe.stages.sample_reads:console',
               'hp_trim_reads=haphpipe.stages.trim_reads:console',
