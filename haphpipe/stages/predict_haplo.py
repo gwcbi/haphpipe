@@ -258,17 +258,18 @@ def predict_haplo(
                 [cmd1, cmd2,], 'predict_haplo:%s' % ph, quiet, logfile, debug
             )
 
-            # Copy files
-            dest = os.path.join(outdir, ph)
-            if not os.path.exists(dest):
-                os.makedirs(dest)              
-            shutil.copy(os.path.join(tempdir, '%s.config.log' % ph), dest)
-            for f in glob(os.path.join(tempdir, '%s_out*global*.fas' % ph)):
-                shutil.copy(f, dest)
-            for f in glob(os.path.join(tempdir, '%s_out*global*.html' % ph)):
-                shutil.copy(f, dest)
-            bf, bh = rename_best(dest, ph)
-            best_fa.append((ph, bf))
+                if not debug:
+                # Copy files
+                dest = os.path.join(outdir, ph)
+                if not os.path.exists(dest):
+                    os.makedirs(dest)
+                shutil.copy(os.path.join(tempdir, '%s.config.log' % ph), dest)
+                for f in glob(os.path.join(tempdir, '%s_out*global*.fas' % ph)):
+                    shutil.copy(f, dest)
+                for f in glob(os.path.join(tempdir, '%s_out*global*.html' % ph)):
+                    shutil.copy(f, dest)
+                bf, bh = rename_best(dest, ph)
+                best_fa.append((ph, bf))
         except PipelineStepError as e:
             print(e, file=sys.stderr)
             if e.returncode == 139:
