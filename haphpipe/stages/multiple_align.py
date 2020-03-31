@@ -285,7 +285,7 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
     cmd2 = ['mkdir -p', msadir]
     sysutils.command_runner([cmd2, ], 'multiple_align', quiet, None, debug)
     if logfile is not None:  # move logfile to output directory
-        newlogfile = os.path.join(msadir, logfile)
+        newlogfile = os.path.join(msadir, os.path.basename(logfile))
         logfile = open(newlogfile, 'a')
 
     ### OPTION 1: only generate fasta files, do not align (FASTAONLY = TRUE) ###
