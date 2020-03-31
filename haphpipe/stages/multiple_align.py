@@ -68,7 +68,7 @@ def stageparser(parser):
     group4.add_argument('--quiet', action='store_true',
                         help='''Do not write output to console
                                     (silence stdout and stderr)''')
-    group4.add_argument('--logfile', type=str,
+    group4.add_argument('--logfile', type=argparse.FileType('a'),
                         help='Name for log file (output)')
     group4.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
@@ -279,14 +279,12 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
         msg = 'No GTF file given'
         raise sysutils.MissingRequiredArgument(msg)
 
-    ## create output directory and put logfile there
+    ## create output directory
     msadir = os.path.join(outdir, 'multiple_align')
 
     cmd2 = ['mkdir -p', msadir]
     sysutils.command_runner([cmd2, ], 'multiple_align', quiet, None, debug)
-    if logfile is not None:  # move logfile to output directory
-        newlogfile = os.path.join(msadir, os.path.basename(logfile))
-        logfile = open(newlogfile, 'a')
+
 
     ### OPTION 1: only generate fasta files, do not align (FASTAONLY = TRUE) ###
 
