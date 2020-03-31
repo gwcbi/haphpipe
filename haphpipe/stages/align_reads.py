@@ -75,7 +75,7 @@ def stageparser(parser):
                         help='Print commands but do not run')
     parser.set_defaults(func=align_reads)
 
-
+### --uzma-- write your comment here 
 def align_reads(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
         bt2_preset='sensitive-local', sample_id='sampleXX',
