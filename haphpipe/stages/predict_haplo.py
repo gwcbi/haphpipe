@@ -233,14 +233,18 @@ def predict_haplo(
         msg = "Reconstruction region %s:" % ph
         msg += " %s:%d-%d\n" % (rname, spos, epos)
         sysutils.log_message(msg, quiet, logfile)
-        
+
+        # rename the predicthaplo number (PH##) to include region (now: PH##_reg)
+        ph = '%s_%s' % (ph, rname.split('|')[-2])
+
         # Construct params specific for region
         reg_params = dict(DEFAULTS)
         reg_params['min_readlength'] = min_readlength        
         reg_params['reconstruction_start'] = spos
         reg_params['reconstruction_stop'] = epos
         reg_params['prefix'] = '%s_out.' % ph
-        
+
+
         # Lookup reference and alignment filename 
         reg_params['ref_fasta'] = os.path.basename(alnmap[rname][0])
         reg_params['alignment'] = os.path.basename(alnmap[rname][1])
