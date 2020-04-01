@@ -262,7 +262,7 @@ def predict_haplo(
                 [cmd1, cmd2,], 'predict_haplo:%s' % ph, quiet, logfile, debug
             )
 
-                if not debug:
+            if not debug:
                 # Copy files
                 dest = os.path.join(outdir, ph)
                 if not os.path.exists(dest):
