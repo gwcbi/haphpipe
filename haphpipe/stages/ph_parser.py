@@ -70,22 +70,23 @@ def ph_parser(
     freq = []
     fasta = []
     newseq = None
+    ph = os.path.basename(haplotypes_fa).split(".")[0]
     for l in open(haplotypes_fa, 'r'):
         l = l.strip('\n')
         if l.startswith('>'):
             num_hap += 1
             if newseq is not None:
                 fasta.append(newseq)
-            newseq = [l.strip(">"), None, ""]
+            newseq = [ph, l.strip(">"), None, ""]
         elif l.startswith(';'):
             parts = l.strip(';').split(':')
             if parts[0] == 'Freq':
                 freq.append(float(parts[1]))
-                newseq[1] = float(parts[1])
+                newseq[2] = float(parts[1])
             else:
                 pass
         else:
-            newseq[2] += l.strip('\n')
+            newseq[3] += l.strip('\n')
 
     fasta.append(newseq)
 
@@ -100,10 +101,10 @@ def ph_parser(
         print("PH_num_hap %s" % num_hap, file=summary_txt)
         print("PH_hap_diversity %s" % hap_div, file=summary_txt)
 
-        seqlen = len(fasta[0][2])
+        seqlen = len(fasta[0][-1])
         equal_len = True
         for seq in fasta:
-            sl = len(seq[2])
+            sl = len(seq[-1])
             if sl != seqlen:
                 sysutils.log_message(
                     "Sequence length is different for each haplotype.\n",
@@ -117,15 +118,15 @@ def ph_parser(
 
         for sub_list in fasta:
             if prefix is None:
-                print('>%s Freq=%s' % (sub_list[0], sub_list[1]),
+                print('>sid|%s_%s|reg|%s| Freq=%s' % (sub_list[0], sub_list[1], sub_list[0].split("_")[-1], sub_list[2]),
                       file=newseq_fa)
             else:
-                print('>%s_%s Freq=%s' % (prefix, sub_list[0], sub_list[1]),
+                print('>sid|%s_%s_%s|reg|%s| Freq=%s' % (prefix, sub_list[0], sub_list[1], sub_list[0].split("_")[-1], sub_list[2]),
                       file=newseq_fa)
             if keep_gaps:
-                print("%s" % (sub_list[2]), file=newseq_fa)
+                print("%s" % (sub_list[-1]), file=newseq_fa)
             else:
-                print("%s" % (sub_list[2].replace('-', "")), file=newseq_fa)
+                print("%s" % (sub_list[-1].replace('-', "")), file=newseq_fa)
 
         sysutils.log_message(
             "Summary and FASTA file completed for %s.\n" % haplotypes_fa,
