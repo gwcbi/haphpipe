@@ -127,7 +127,7 @@ def generate_fastas(dir_list=None, ref_gtf=None, seqs=None, msadir='.'):
         ## append sequences to arrays by region
         for record in SeqIO.parse(os.path.join(msadir, 'all_sequences.fasta'), 'fasta'):
             for i in range(len(regions)):
-                if record.id.split('|')[5] == regions[i]:
+                if record.id.split('|')[-2] == regions[i]:
                     dict['region' + '0%s' % str(i)].append(record)
 
         ## write fasta files for each region
