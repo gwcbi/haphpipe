@@ -66,10 +66,9 @@ Commands:
     predict_haplo            assemble haplotypes with PredictHaplo
     ph_parser                parse output from PredictHaplo.
 
- -- Annotate
+ -- Description
     pairwise_align           align consensus to an annotated reference
     extract_pairwise         extract sequence regions from pairwise alignment
-    annotate_from_ref        annotate consensus from reference annotation
     summary_stats            generates summary statistics for samples
 
  -- Phylo
@@ -158,7 +157,7 @@ def console():
         sub.add_parser('ph_parser', formatter_class=HF)
     )
 
-    # Annotate stages
+    # Annotate/Description stages
     pairwise_align.stageparser(
         sub.add_parser('pairwise_align', formatter_class=HF)
     )
