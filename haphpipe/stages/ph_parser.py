@@ -118,10 +118,10 @@ def ph_parser(
 
         for sub_list in fasta:
             if prefix is None:
-                print('>sid|%s_%s|ref||reg|%s Freq=%s' % (sub_list[0], sub_list[1], sub_list[0].split("_")[-1], sub_list[2]),
+                print('>sid|%s_%s|reg|%s| Freq=%s' % (sub_list[0], sub_list[1], sub_list[0].split("_")[-1], sub_list[2]),
                       file=newseq_fa)
             else:
-                print('>sid|%s_%s_%s|ref||reg|%s Freq=%s' % (prefix, sub_list[0], sub_list[1], sub_list[0].split("_")[-1], sub_list[2]),
+                print('>sid|%s_%s_%s|reg|%s| Freq=%s' % (prefix, sub_list[0], sub_list[1], sub_list[0].split("_")[-1], sub_list[2]),
                       file=newseq_fa)
             if keep_gaps:
                 print("%s" % (sub_list[-1]), file=newseq_fa)
