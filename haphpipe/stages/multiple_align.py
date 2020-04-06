@@ -17,7 +17,7 @@ def stageparser(parser):
     group1.add_argument('--seqs', type=sysutils.existing_file, help='FASTA file with sequences to be aligned')
     group1.add_argument('--dir_list', type=sysutils.existing_file,
                         help='List of directories which include either a final.fna or ph_haplotypes.fna file, one on each line')
-    group1.add_argument('--haplotypes',action='store_true',help='files are haplotype files (default: False)')
+    group1.add_argument('--haplotypes',action='store_true',help='files are haplotype files')
     group1.add_argument('--ref_gtf', type=sysutils.existing_file, help='Reference GTF file')
     group1.add_argument('--out_align', help='Name for alignment file')
     group1.add_argument('--nuc', action='store_true', help='Assume nucleotide')
