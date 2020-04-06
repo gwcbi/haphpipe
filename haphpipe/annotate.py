@@ -26,7 +26,8 @@ def main():
         help='''Annotate consensus sequence(s). An assembled consensus sequence
                 can be amino acid aligned to a reference (i.e. HXB2) so the
                 same coordinate system can be used. Sequences can then be
-                extracted based on the shared coordinate systems.
+                extracted based on the shared coordinate systems. Summary 
+                statistics can also be calculated.
              '''
     )
     pairwise_align.stageparser(sub.add_parser('pairwise_align'))
