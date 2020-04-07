@@ -11,7 +11,7 @@ from haphpipe.utils import sysutils
 from haphpipe.utils.sysutils import MissingRequiredArgument
 from haphpipe.utils.sysutils import PipelineStepError
 
-
+# test comment
 
 __author__ = 'Matthew L. Bendall'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
