@@ -241,7 +241,7 @@ def run_mafft(inputseqs=None, out_align="alignment.fasta", auto=None, algo=None,
                            '%s' % os.path.basename(out_align))
 
     ## create command
-    cmd1 += ['%s' % os.path.join(msadir, os.path.basename(inputseqs)), '>', '%s' % outName]
+    cmd1 += ['%s' % inputseqs, '>', '%s' % outName]
 
     ## run MAFFT command
     sysutils.command_runner([cmd1, ], 'multiple_align', quiet, logfile, debug)
@@ -292,7 +292,7 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
 
     # align haplotype fasta files (does not separate)
 
-    if haplotypes is True:
+    if haplotypes is True and fastaonly is False:
         generate_fastas(dir_list=dir_list, ref_gtf=None, seqs=seqs, msadir=msadir,name='ph_haplotypes.fna')
 
         #### "Mafft stores the input sequences and other files in a temporary        ####
@@ -301,7 +301,7 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
         # Temporary directory
         tempdir = sysutils.create_tempdir('multiple_align', None, quiet, logfile)
         os.environ["MAFFT_TMPDIR"] = tempdir
-        run_mafft(inputseqs='all_sequences.fasta', out_align=out_align, auto=auto, algo=algo, sixmerpair=sixmerpair,
+        run_mafft(inputseqs=os.path.join(msadir,'all_sequences.fasta'), out_align=out_align, auto=auto, algo=algo, sixmerpair=sixmerpair,
                   globalpair=globalpair,
                   localpair=localpair, genafpair=genafpair, fastapair=fastapair, weighti=weighti, retree=retree,
                   maxiterate=maxiterate, noscore=noscore, memsave=memsave, parttree=parttree, dpparttree=dpparttree,
@@ -310,6 +310,8 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
                   fmodel=fmodel, clustalout=clustalout, inputorder=inputorder, reorder=reorder, treeout=treeout,
                   quiet_mafft=quiet_mafft, nuc=nuc, amino=amino, quiet=quiet, logfile=logfile,
                   debug=debug, ncpu=ncpu, msadir=msadir, phylipout=phylipout)
+        cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
+        sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
         return
 
     ### OPTION 2: only generate fasta files, do not align (FASTAONLY = TRUE) ###
@@ -317,7 +319,12 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
     ## if fasta only option is entered, write separated fasta files and end stage
 
     if fastaonly is True:
-        generate_fastas(dir_list, ref_gtf, seqs, msadir)
+        if haplotypes is True:
+            generate_fastas(dir_list=dir_list, ref_gtf=None, seqs=seqs, msadir=msadir,name='ph_haplotypes.fna')
+        else:
+            generate_fastas(dir_list, ref_gtf, seqs, msadir)
+        cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
+        sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
         return
 
     ### OPTION 3: do not separate by region before aligning (ALIGNALL = TRUE) ###
@@ -341,6 +348,8 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
                   fmodel=fmodel, clustalout=clustalout, inputorder=inputorder, reorder=reorder, treeout=treeout,
                   quiet_mafft=quiet_mafft, nuc=nuc, amino=amino, quiet=quiet, logfile=logfile,
                   debug=debug, ncpu=ncpu, msadir=msadir, phylipout=phylipout)
+        cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
+        sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
         return
 
     ## if an dir_list is given and alignall is true, generate and then align all_sequences.fasta
@@ -354,7 +363,7 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
         tempdir = sysutils.create_tempdir('multiple_align', None, quiet, logfile)
         os.environ["MAFFT_TMPDIR"] = tempdir
 
-        run_mafft(inputseqs='all_sequences.fasta', out_align=out_align, auto=auto, algo=algo, sixmerpair=sixmerpair,
+        run_mafft(inputseqs=os.path.join(msadir,'all_sequences.fasta'), out_align=out_align, auto=auto, algo=algo, sixmerpair=sixmerpair,
                   globalpair=globalpair,
                   localpair=localpair, genafpair=genafpair, fastapair=fastapair, weighti=weighti, retree=retree,
                   maxiterate=maxiterate, noscore=noscore, memsave=memsave, parttree=parttree, dpparttree=dpparttree,
@@ -363,6 +372,8 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
                   fmodel=fmodel, clustalout=clustalout, inputorder=inputorder, reorder=reorder, treeout=treeout,
                   quiet_mafft=quiet_mafft, nuc=nuc, amino=amino, quiet=quiet, logfile=logfile,
                   debug=debug, ncpu=ncpu, msadir=msadir, phylipout=phylipout)
+        cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
+        sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
         return
 
     ### OPTION 4 (default): separate by region and align each region individually ###
@@ -380,7 +391,7 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
         os.environ["MAFFT_TMPDIR"] = tempdir
 
         ## run mafft
-        run_mafft(inputseqs=seqname, out_align=alignmentname, auto=auto, algo=algo, sixmerpair=sixmerpair,
+        run_mafft(inputseqs=os.path.join(msadir,seqname), out_align=alignmentname, auto=auto, algo=algo, sixmerpair=sixmerpair,
                   globalpair=globalpair,
                   localpair=localpair, genafpair=genafpair, fastapair=fastapair, weighti=weighti, retree=retree,
                   maxiterate=maxiterate, noscore=noscore, memsave=memsave, parttree=parttree, dpparttree=dpparttree,
@@ -393,7 +404,7 @@ def multiple_align(seqs=None, dir_list=None, haplotypes=None,ref_gtf=None, out_a
     ## summary message at end
     cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
     sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
-
+    return
 
 def console():
     parser = argparse.ArgumentParser(
