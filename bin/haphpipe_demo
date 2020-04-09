@@ -666,8 +666,10 @@ fi
 stage="build_tree"
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
-if [[ -e ${outdir}/build_tree/RAxML_bipartitionsBranchLabels.alignment_region00 ]]; then
-    echo "[---$SN---] ($(date)) EXISTS: $stage RAxML_bipartitionsBranchLabels.alignment_region00, RAxML_bipartitionsBranchLabels.alignment_region01"
+if [[ -e ${outdir}/build_tree/RAxML_bipartitionsBranchLabels.alignment_region00 ]] &&\
+   [[ -e ${outdir}/build_tree/RAxML_bipartitionsBranchLabels.alignment_region01 ]] &&\
+   [[ -e ${outdir}/build_tree/RAxML_bipartitionsBranchLabels.alignment_region02 ]]; then
+    echo "[---$SN---] ($(date)) EXISTS: $stage RAxML_bipartitionsBranchLabels.alignment_region00, RAxML_bipartitionsBranchLabels.alignment_region01, RAxML_bipartitionsBranchLabels.alignment_region02"
 else
     # check for PredictHaplo
     command -v PredictHaplo-Paired >/dev/null 2>&1
@@ -707,6 +709,7 @@ EOF
             [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
                 (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
         done
+        echo "region02 did not run because there are only 3 sequences in the alignment"
     fi
 fi
 
