@@ -135,7 +135,7 @@ def model_test(seqs=None,outname='modeltest_results',run_id=None, data_type='nt'
     if os.path.exists(os.path.join(tempdir, '%s.out' % outname)):
         shutil.copy(os.path.join(tempdir, '%s.out' % outname), os.path.abspath(outdir))
     if not keep_tmp:
-        sysutils.remove_tempdir(tempdir, 'build_tree', quiet, logfile)
+        sysutils.remove_tempdir(tempdir, 'model_test', quiet, logfile)
 
     # Parse .out file and write TSV summary file
     criteria = []
