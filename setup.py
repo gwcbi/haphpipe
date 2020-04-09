@@ -10,6 +10,8 @@ setuptools.setup(name='haphpipe',
       author='Matthew L. Bendall, Keylie M. Gibson, Maggie C. Steiner',
       author_email='bendall@gwu.edu and kmgibson@gwu.edu',
       packages=setuptools.find_packages(),
+      package_data={'': ['bin/refs/HIV_B.K03455.HXB2*']},
+      include_package_data=True,
       scripts=[
           'bin/haphpipe_assemble_01',
           'bin/haphpipe_assemble_02',

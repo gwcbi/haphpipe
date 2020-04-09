@@ -49,48 +49,6 @@ echo "[---$SN---] ($(date)) num CPU:           $ncpu"
 t1=$(date +"%s")
 
 
-###############################################################################
-# Step 1: Downloading reference files.
-###############################################################################
-stage="Demo references"
-echo -e "\n[---$SN---] ($(date)) Stage: Downloading reference files for Demo"
-
-# checking for the 5 directories
-if [[ -e $outdir/refs/HIV_B.K03455.HXB2.amplicons.fasta ]] &&\
-   [[ -e ${outdir}/refs/HIV_B.K03455.HXB2.fasta ]] &&\
-   [[ -e ${outdir}/refs/HIV_B.K03455.HXB2.gtf ]]; then
-    echo "[---$SN---] ($(date)) EXISTS: $stage HIV_B.K03455.HXB2.amplicons.fasta,HIV_B.K03455.HXB2.fasta,HIV_B.K03455.HXB2.gtf"
-else
-# update with Haphpipe links when uploaded to github
-    read -r -d '' cmd <<EOF
-wget --directory-prefix=${outdir}/refs https://github.com/kmgibson/haphpipe_bioinformaticsclass/raw/master/HIV/HIV_B.K03455.HXB2.amplicons.fasta
-EOF
-    echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
-    eval $cmd
-
-    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage for HIV_B.K03455.HXB2.amplicons.fasta" || \
-      (  echo "[---$SN---] ($(date)) FAILED: $stage for HIV_B.K03455.HXB2.amplicons.fasta" && exit 1 )
-
-    read -r -d '' cmd <<EOF
-wget --directory-prefix=${outdir}/refs https://github.com/kmgibson/haphpipe_bioinformaticsclass/raw/master/HIV/HIV_B.K03455.HXB2.fasta
-EOF
-    echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
-    eval $cmd
-
-    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage for HIV_B.K03455.HXB2.fasta" || \
-      (  echo "[---$SN---] ($(date)) FAILED: $stage for HIV_B.K03455.HXB2.fasta" && exit 1 )
-
-    read -r -d '' cmd <<EOF
-wget --directory-prefix=${outdir}/refs https://github.com/kmgibson/haphpipe_bioinformaticsclass/raw/master/HIV/HIV_B.K03455.HXB2.gtf
-EOF
-    echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
-    eval $cmd
-
-    [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage for HIV_B.K03455.HXB2.gtf" || \
-        (  echo "[---$SN---] ($(date)) FAILED: $stage for HIV_B.K03455.HXB2.gtf" && exit 1 )
-fi
-
-
 ### We split up the samples, instead of looping through them for fastq-dump ###
 ### because sometimes the fastq-dump/NCBI doesn't work. It was more helpful ###
 ### to see when a sample failed this way rather than a loop for fastq-dump  ###

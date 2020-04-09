@@ -5,6 +5,7 @@ from __future__ import print_function
 import sys
 import os
 import argparse
+import shutil
 
 from haphpipe.utils import helpers
 from haphpipe.utils import sysutils
@@ -43,14 +44,31 @@ def demo(
     # This file, demo.py, is located within "stages", so the package root is
     # up one directory
     _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    _data = os.path.join(_base, 'data')
+    _data = os.path.abspath(os.path.join(os.path.dirname(_base), 'bin/refs'))
+    #_data = os.path.join(_base, 'data')
+
+    # get paths for reference files
+    def get_data(path):
+        return os.path.join(_data, path)
+
+    data_amp_fasta = get_data('HIV_B.K03455.HXB2.amplicons.fasta')
+    data_fasta = get_data('HIV_B.K03455.HXB2.fasta')
+    data_gtf = get_data('HIV_B.K03455.HXB2.gtf')
 
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
+    refs = os.path.join(outdir, 'haphpipe_demo/refs')
+    if not os.path.exists(refs):
+        os.makedirs(refs)
+
+    # Copy reference files to directory
+    shutil.copy(data_amp_fasta, refs)
+    shutil.copy(data_fasta, refs)
+    shutil.copy(data_gtf, refs)
+
     #dest = os.path.abspath(outdir)
     #if not os.path.exists(os.path.join(outdir,))
-
 
     print(_base, file=sys.stderr)
 
@@ -58,7 +76,6 @@ def demo(
     sysutils.check_dependency("fastq-dump")
 
     # Demo command
-    # fix once everything is uploaded
     cmd1 = [
         'haphpipe_demo', 'haphpipe_demo'
     ]
