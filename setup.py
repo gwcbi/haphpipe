@@ -13,7 +13,7 @@ setuptools.setup(name='haphpipe',
       scripts=[
           'bin/haphpipe_assemble_01',
           'bin/haphpipe_assemble_02',
-          #'bin/haphpipe_demo',
+          'bin/haphpipe_demo',
       ],
       entry_points={
           'console_scripts': [

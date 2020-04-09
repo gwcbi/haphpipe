@@ -6,11 +6,7 @@ import argparse
 
 from haphpipe.utils import sysutils
 
-from haphpipe.stages import pairwise_align, demo
-from haphpipe.stages import post_assembly
-from haphpipe.stages import extract_pairwise
-from haphpipe.stages import annotate_from_ref
-
+from haphpipe.stages import demo
 
 __author__ = 'Keylie M. Gibson'
 __copyright__ = "Copyright (C) 2020 Keylie M. Gibson"
