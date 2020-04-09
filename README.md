@@ -268,7 +268,7 @@ haphpipe model_test --seqs alignment.fasta
 
 ##### build_tree 
 
-Create Phylogenetic Tree with RAxML. Input is an aligned FASTA or PHYLIP file with sequences. Output are tre files.
+Create phylogenetic tree with RAxML. Input is an aligned FASTA or PHYLIP file with sequences. Output are tre files.
 Example to execute: 
 ```
 haphpipe model_test --run_full_analysis --seqs alignment.phy
