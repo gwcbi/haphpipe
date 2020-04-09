@@ -43,6 +43,7 @@ setuptools.setup(name='haphpipe',
               'hp_ph_parser=haphpipe.stages.ph_parser:console',
               # hp_phylo subcommands
               'hp_multiple_align=haphpipe.stages.multiple_align:console',
+              'hp_model_test=haphpipe.stages.model_test:console',
               'hp_build_tree=haphpipe.stages.build_tree:console',
           ],
       },
