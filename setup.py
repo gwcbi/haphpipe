@@ -19,7 +19,7 @@ setuptools.setup(name='haphpipe',
           'console_scripts': [
               'haphpipe=haphpipe.haphpipe:console',
               # miscellaneous subcommands
-              #'hp_demo=haphpipe.stages.demo:console',
+              'hp_demo=haphpipe.stages.demo:console',
               # hp_reads subcommands
               'hp_sample_reads=haphpipe.stages.sample_reads:console',
               'hp_trim_reads=haphpipe.stages.trim_reads:console',
