@@ -35,6 +35,7 @@ from haphpipe.stages import annotate_from_ref
 from haphpipe.stages import summary_stats
 # Phylo stages
 from haphpipe.stages import multiple_align
+from haphpipe.stages import model_test
 # from haphpipe.stages import build_tree
 
 # Miscellaneous
@@ -66,14 +67,15 @@ Commands:
     predict_haplo            assemble haplotypes with PredictHaplo
     ph_parser                parse output from PredictHaplo.
 
- -- Annotate
+ -- Description
     pairwise_align           align consensus to an annotated reference
     extract_pairwise         extract sequence regions from pairwise alignment
-    annotate_from_ref        annotate consensus from reference annotation
     summary_stats            generates summary statistics for samples
 
  -- Phylo
     multiple_align           multiple sequence alignment
+    model_test               tests for model of evolution using ModelTest
+    build_tree               bilds phylogenetic tree with RAxML
 
  -- Miscellaneous
     demo                     setup demo directory and test data
@@ -158,7 +160,7 @@ def console():
         sub.add_parser('ph_parser', formatter_class=HF)
     )
 
-    # Annotate stages
+    # Annotate/Description stages
     pairwise_align.stageparser(
         sub.add_parser('pairwise_align', formatter_class=HF)
     )
@@ -178,6 +180,9 @@ def console():
     # Phylo
     multiple_align.stageparser(
         sub.add_parser('multiple_align', formatter_class=HF)
+    )
+    model_test.stageparser(
+        sub.add_parser('model_test', formatter_class=HF)
     )
     #build_tree.stageparser(
     #    sub.add_parser('build_tree', formatter_class=HF)

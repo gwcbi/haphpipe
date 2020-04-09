@@ -16,7 +16,7 @@ def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
     group1.add_argument('--seqs', type=sysutils.existing_file, help='FASTA file with sequences to be aligned')
     group1.add_argument('--dir_list', type=sysutils.existing_file,
-                        help='List of directories which include a final.fna file, one on each line')
+                        help='List of directories which include either a final.fna or ph_haplotypes.fna file, one on each line')
     group1.add_argument('--ref_gtf', type=sysutils.existing_file, help='Reference GTF file')
     group1.add_argument('--out_align', help='Name for alignment file')
     group1.add_argument('--nuc', action='store_true', help='Assume nucleotide')
@@ -68,7 +68,7 @@ def stageparser(parser):
     group4.add_argument('--quiet', action='store_true',
                         help='''Do not write output to console
                                     (silence stdout and stderr)''')
-    group4.add_argument('--logfile', type=str,
+    group4.add_argument('--logfile', type=argparse.FileType('a'),
                         help='Name for log file (output)')
     group4.add_argument('--debug', action='store_true',
                         help='Print commands but do not run')
@@ -94,23 +94,27 @@ def generate_fastas(dir_list=None, ref_gtf=None, seqs=None, msadir='.'):
 
     ## open dir_list
     if dir_list is not None:
-        f = open(dir_list, 'r')
-        filenames = f.read().splitlines()
+        with open(dir_list, 'r') as f:
+            filenames = f.read().splitlines()
     else:
         filenames = []
 
     ## parse fasta files with SeqIO and append to allseqs list
     allseqs = []
+
     if seqs is not None:
         for record in SeqIO.parse(seqs, "fasta"):
             allseqs.append(record)
     for n in filenames:
         if len(n) > 0:
-            x = os.path.join(n, 'final.fna')
-            for record in SeqIO.parse(x, "fasta"):
-                allseqs.append(record)
+            if os.path.exists(os.path.join(n, 'final.fna')):
+                for record in SeqIO.parse(os.path.join(n, 'final.fna'), "fasta"):
+                    allseqs.append(record)
+            if os.path.exists(os.path.join(n, 'ph_haplotypes.fna')):
+                for record in SeqIO.parse(os.path.join(n, 'ph_haplotypes.fna'), "fasta"):
+                    allseqs.append(record)
 
-    ## write all sequences to all_sequences.fasta file
+    ## write sequences to fasta files
     with open(os.path.join(msadir, 'all_sequences.fasta'), 'w') as outfile1:
         for record in allseqs:
             SeqIO.write(record, outfile1, 'fasta')
@@ -127,7 +131,7 @@ def generate_fastas(dir_list=None, ref_gtf=None, seqs=None, msadir='.'):
         ## append sequences to arrays by region
         for record in SeqIO.parse(os.path.join(msadir, 'all_sequences.fasta'), 'fasta'):
             for i in range(len(regions)):
-                if record.id.split('|')[5] == regions[i]:
+                if record.id.split('|')[-2] == regions[i]:
                     dict['region' + '0%s' % str(i)].append(record)
 
         ## write fasta files for each region
@@ -237,10 +241,10 @@ def run_mafft(inputseqs=None, out_align="alignment.fasta", auto=None, algo=None,
 
     # Outputs
     outName = os.path.join(msadir,
-                           '%s' % out_align)
+                           '%s' % os.path.basename(out_align))
 
     ## create command
-    cmd1 += ['%s' % os.path.join(msadir, inputseqs), '>', '%s' % outName]
+    cmd1 += ['%s' % inputseqs, '>', '%s' % outName]
 
     ## run MAFFT command
     sysutils.command_runner([cmd1, ], 'multiple_align', quiet, logfile, debug)
@@ -275,18 +279,15 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
     if seqs is None and dir_list is None:
         msg = '--seqs or --dir_list is required'
         raise sysutils.MissingRequiredArgument(msg)
-    if ref_gtf is None and alignall is False:
+    if ref_gtf is None and alignall is False:  # and haplotypes is False:
         msg = 'No GTF file given'
         raise sysutils.MissingRequiredArgument(msg)
 
-    ## create output directory and put logfile there
+    ## create output directory
     msadir = os.path.join(outdir, 'multiple_align')
 
     cmd2 = ['mkdir -p', msadir]
     sysutils.command_runner([cmd2, ], 'multiple_align', quiet, None, debug)
-    if logfile is not None:  # move logfile to output directory
-        newlogfile = os.path.join(msadir, logfile)
-        logfile = open(newlogfile, 'a')
 
     ### OPTION 1: only generate fasta files, do not align (FASTAONLY = TRUE) ###
 
@@ -294,6 +295,8 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
 
     if fastaonly is True:
         generate_fastas(dir_list, ref_gtf, seqs, msadir)
+        cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
+        sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
         return
 
     ### OPTION 2: do not separate by region before aligning (ALIGNALL = TRUE) ###
@@ -317,6 +320,8 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
                   fmodel=fmodel, clustalout=clustalout, inputorder=inputorder, reorder=reorder, treeout=treeout,
                   quiet_mafft=quiet_mafft, nuc=nuc, amino=amino, quiet=quiet, logfile=logfile,
                   debug=debug, ncpu=ncpu, msadir=msadir, phylipout=phylipout)
+        cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
+        sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
         return
 
     ## if an dir_list is given and alignall is true, generate and then align all_sequences.fasta
@@ -330,7 +335,8 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
         tempdir = sysutils.create_tempdir('multiple_align', None, quiet, logfile)
         os.environ["MAFFT_TMPDIR"] = tempdir
 
-        run_mafft(inputseqs='all_sequences.fasta', out_align=out_align, auto=auto, algo=algo, sixmerpair=sixmerpair,
+        run_mafft(inputseqs=os.path.join(msadir, 'all_sequences.fasta'), out_align=out_align, auto=auto, algo=algo,
+                  sixmerpair=sixmerpair,
                   globalpair=globalpair,
                   localpair=localpair, genafpair=genafpair, fastapair=fastapair, weighti=weighti, retree=retree,
                   maxiterate=maxiterate, noscore=noscore, memsave=memsave, parttree=parttree, dpparttree=dpparttree,
@@ -339,6 +345,8 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
                   fmodel=fmodel, clustalout=clustalout, inputorder=inputorder, reorder=reorder, treeout=treeout,
                   quiet_mafft=quiet_mafft, nuc=nuc, amino=amino, quiet=quiet, logfile=logfile,
                   debug=debug, ncpu=ncpu, msadir=msadir, phylipout=phylipout)
+        cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
+        sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
         return
 
     ### OPTION 3 (default): separate by region and align each region individually ###
@@ -356,7 +364,8 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
         os.environ["MAFFT_TMPDIR"] = tempdir
 
         ## run mafft
-        run_mafft(inputseqs=seqname, out_align=alignmentname, auto=auto, algo=algo, sixmerpair=sixmerpair,
+        run_mafft(inputseqs=os.path.join(msadir, seqname), out_align=alignmentname, auto=auto, algo=algo,
+                  sixmerpair=sixmerpair,
                   globalpair=globalpair,
                   localpair=localpair, genafpair=genafpair, fastapair=fastapair, weighti=weighti, retree=retree,
                   maxiterate=maxiterate, noscore=noscore, memsave=memsave, parttree=parttree, dpparttree=dpparttree,
@@ -369,6 +378,7 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
     ## summary message at end
     cmd3 = ['echo', 'Stage completed. Output files are located here: %s\n' % os.path.abspath(msadir)]
     sysutils.command_runner([cmd3, ], 'multiple_align', quiet, logfile, debug)
+    return
 
 
 def console():

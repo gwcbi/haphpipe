@@ -84,7 +84,7 @@ See more information regarding the pipelines at the [wiki](https://github.com/gw
 
 ## Stages
 
-Each stage can be run on its own. Stages are grouped into 4 categories: hp_reads, hp_assemble, hp_haplotype, and hp_annotate.
+Each stage can be run on its own. Stages are grouped into 5 categories: hp_reads, hp_assemble, hp_haplotype, hp_description, and hp_phylo.
 More detailed description of command line options for each stage are available in the [wiki](https://github.com/gwcbi/haphpipe/wiki). To view all available stages in HAPHPIPE, run: 
 ```
 haphpipe -h
@@ -216,7 +216,7 @@ Example to execute:
 haphpipe ph_parser best.fas
 ```
 
-### Annotate
+### Description
 
 Stages to annotate consensus sequences.
 
@@ -263,4 +263,3 @@ Example to execute:
 ```
 haphpipe multiple_align --dir_list demo_dir_list.txt -ref_gtf referenceSeq.gtf --amplicons
 ```
-
