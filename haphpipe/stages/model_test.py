@@ -140,13 +140,13 @@ def model_test(seqs=None,outname='modeltest_results',run_id=None, data_type='nt'
     # Parse .out file and write TSV summary file
     criteria = []
     bestmods = []
-    with open('%s.out' % outname) as f1:
+    with open(os.path.join(outdir,'%s.out' % outname)) as f1:
         for line in f1.read().splitlines():
             if "Best model according to" in line:
                 criteria += line.split(' ')[-1:]
             if "Model: " in line:
                 bestmods += line.split(' ')[-1:]
-    with open('%s_summary.tsv' % outname,'w') as f2:
+    with open(os.path.join(outdir,'%s_summary.tsv' % outname),'w') as f2:
         f2.write('File\tCriteria\tBest Model\n')
         for i in range(len(criteria)):
             f2.write('%s\t%s\t%s\n' % (seqs,criteria[i],bestmods[i]))
