@@ -12,8 +12,8 @@ from haphpipe.utils.sysutils import PipelineStepError
 from haphpipe.utils.sysutils import MissingRequiredArgument
 
 
-__author__ = 'Matthew L. Bendall'
-__copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
+__author__ = 'Matthew L. Bendall and Keylie M. Gibson'
+__copyright__ = "Copyright (C) 2019 Matthew L. Bendall and 2020 Keylie M. Gibson"
 
 
 def stageparser(parser):
@@ -48,11 +48,24 @@ def demo(
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    dest = os.path.abspath(outdir)
-    if not os.path.exists(os.path.join(outdir,))
+    #dest = os.path.abspath(outdir)
+    #if not os.path.exists(os.path.join(outdir,))
 
 
     print(_base, file=sys.stderr)
+
+    # Check for executable
+    sysutils.check_dependency("fastq-dump")
+
+    # Demo command
+    # fix once everything is uploaded
+    cmd1 = [
+        'haphpipe_demo', 'haphpipe_demo'
+    ]
+
+    sysutils.command_runner(
+        [cmd1, ], 'demo'
+    )
 
 def console():
     """ Entry point
@@ -62,7 +75,7 @@ def console():
 
     """
     parser = argparse.ArgumentParser(
-        description='Set up demo directory.',
+        description='Set up demo directory and run demo.',
         formatter_class=sysutils.ArgumentDefaultsHelpFormatterSkipNone,
     )
     stageparser(parser)

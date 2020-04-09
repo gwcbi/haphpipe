@@ -37,9 +37,8 @@ from haphpipe.stages import summary_stats
 from haphpipe.stages import multiple_align
 from haphpipe.stages import model_test
 from haphpipe.stages import build_tree
-
 # Miscellaneous
-#from haphpipe.stages import demo
+from haphpipe.stages import demo
 
 
 BASE_USAGE = '''
@@ -189,9 +188,9 @@ def console():
     )
 
     # Miscellaneous
-    #demo.stageparser(
-    #    sub.add_parser('demo', formatter_class=HF)
-    #)
+    demo.stageparser(
+        sub.add_parser('demo', formatter_class=HF)
+    )
 
     args = parser.parse_args()
     try:
