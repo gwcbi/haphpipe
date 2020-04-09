@@ -29,7 +29,8 @@ conda create -n haphpipe \
     spades \
     blast \
     sierrapy \
-    mafft
+    mafft \
+    modeltest-ng
 
 ```
 
