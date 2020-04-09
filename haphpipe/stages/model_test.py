@@ -15,8 +15,9 @@ def stageparser(parser):
 
     group1 = parser.add_argument_group('Input/Output')
     group1.add_argument('--seqs', type=sysutils.existing_file, help='Alignment in FASTA or PHYLIP format')
-    group1.add_argument('--outname',type=str,help='Name for output file')
-    group1.add_argument('--outdir',type=sysutils.existing_dir,help='Output directory')
+    group1.add_argument('--run_id',type=str,help="Prefix for output files")
+    group1.add_argument('--outname',type=str,help='Name for output file (Default: modeltest_results)')
+    group1.add_argument('--outdir',type=sysutils.existing_dir,help='Output directory (Default: .)')
 
     group2 = parser.add_argument_group('ModelTest-NG Options')
     group2.add_argument('--data_type',type=str,help='Data type: nt or aa')
@@ -46,7 +47,7 @@ def stageparser(parser):
     parser.set_defaults(func=model_test)
 
 
-def model_test(seqs=None,outname='modeltest_results',data_type='nt',partitions=None,seed=None,topology='ml',
+def model_test(seqs=None,outname='modeltest_results',run_id=None, data_type='nt',partitions=None,seed=None,topology='ml',
                utree=None,force=None,asc_bias=None,frequencies=None,het=None,models=None,schemes=None,template=None,
                ncpu=1,quiet=False,logfile=None,debug=False,outdir='.',keep_tmp=False):
 
@@ -64,6 +65,10 @@ def model_test(seqs=None,outname='modeltest_results',data_type='nt',partitions=N
 
     # make tempdir
     tempdir = sysutils.create_tempdir('model_test', None, quiet, logfile)
+
+    # add prefix
+    if run_id is not None:
+        outname = run_id+'_'+outname
 
     # build command
     cmd1 = ['modeltest-ng -i %s' % seqs, '-t %s' % topology,'-o %s' % os.path.join(tempdir,outname),
@@ -100,12 +105,11 @@ def model_test(seqs=None,outname='modeltest_results',data_type='nt',partitions=N
         with open(models,'r') as f:
             model_list = f.read().splitlines()
         for m in model_list:
-            if data_type is 'nt' and m not in ['JC','HKY','TrN','TPM1','TPM2','TPM3','TIM1','TIM2','TIM3','TVM','GTR']:
+            if data_type == 'nt' and m not in ['JC','HKY','TrN','TPM1','TPM2','TPM3','TIM1','TIM2','TIM3','TVM','GTR']:
                 raise sysutils.PipelineStepError("At least one model is not valid")
-            elif data_type is 'aa' and m not in ['DAYHOFF','LG','DCMUT','JTT','MTREV','WAG','RTREV','CPREV','VT','BLOSUM62',
+            elif data_type == 'aa' and m not in ['DAYHOFF','LG','DCMUT','JTT','MTREV','WAG','RTREV','CPREV','VT','BLOSUM62',
                                                  'MTMAM','MTART','MTZOA','PMB','HIVB','HIVW','JTTDCMUT','FLU','SMTREV']:
                 raise sysutils.PipelineStepError("At least one model is not valid")
-        print(str(model_list)[1:-1])
         cmd1 += ['-m %s' % str(model_list)[1:-1]]
 
     if schemes is not None and schemes in [3,5,7,11,203]:
@@ -121,8 +125,11 @@ def model_test(seqs=None,outname='modeltest_results',data_type='nt',partitions=N
     # run command
     try:
         sysutils.command_runner([cmd1, ], 'model_test', quiet, logfile, debug)
-    except sysutils.PipelineStepError as p: ### Note: malloc pointer error in ModelTest occurs frequently but output files are not affected.
-        print('Warning: check logfile.\nModelTest error: %s' % p)
+    except sysutils.PipelineStepError as p:
+        if p.returncode == -6:
+            print("Warning: ignoring returncode -6")
+        else:
+            raise sysutils.PipelineStepError("Error in ModelTest-NG")
 
     # copy output file and delete tempdir
     if os.path.exists(os.path.join(tempdir, '%s.out' % outname)):
@@ -130,9 +137,24 @@ def model_test(seqs=None,outname='modeltest_results',data_type='nt',partitions=N
     if not keep_tmp:
         sysutils.remove_tempdir(tempdir, 'build_tree', quiet, logfile)
 
+    # Parse .out file and write TSV summary file
+    criteria = []
+    bestmods = []
+    with open('%s.out' % outname) as f1:
+        for line in f1.read().splitlines():
+            if "Best model according to" in line:
+                criteria += line.split(' ')[-1:]
+            if "Model: " in line:
+                bestmods += line.split(' ')[-1:]
+    with open('%s_summary.tsv' % outname,'w') as f2:
+        f2.write('File\tCriteria\tBest Model\n')
+        for i in range(len(criteria)):
+            f2.write('%s\t%s\t%s\n' % (seqs,criteria[i],bestmods[i]))
+
     # completion message
-    cmd2 = ['echo', 'Stage completed. Output file is located here: %s\n' % os.path.abspath(os.path.join(outdir,'%s.out' % outname))]
-    sysutils.command_runner([cmd2, ], 'model_test', quiet, logfile, debug)
+    cmd2 = ['echo', 'Stage completed. Output file is located here: %s\n' % os.path.abspath(os.path.join(outdir,'%s.out' % outname)),
+            'echo','Summary TSV file is located here: %s\n' % os.path.abspath(os.path.join(outdir,'%s_summary.tsv' % outname))]
+    sysutils.command_runner([cmd2,], 'model_test', quiet, logfile, debug)
 
     return
 
