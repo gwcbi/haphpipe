@@ -35,6 +35,7 @@ from haphpipe.stages import annotate_from_ref
 from haphpipe.stages import summary_stats
 # Phylo stages
 from haphpipe.stages import multiple_align
+from haphpipe.stages import model_test
 # from haphpipe.stages import build_tree
 
 # Miscellaneous
@@ -73,6 +74,8 @@ Commands:
 
  -- Phylo
     multiple_align           multiple sequence alignment
+    model_test               tests for model of evolution using ModelTest
+    build_tree               bilds phylogenetic tree with RAxML
 
  -- Miscellaneous
     demo                     setup demo directory and test data
@@ -177,6 +180,9 @@ def console():
     # Phylo
     multiple_align.stageparser(
         sub.add_parser('multiple_align', formatter_class=HF)
+    )
+    model_test.stageparser(
+        sub.add_parser('model_test', formatter_class=HF)
     )
     #build_tree.stageparser(
     #    sub.add_parser('build_tree', formatter_class=HF)
