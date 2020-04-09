@@ -30,7 +30,8 @@ conda create -n haphpipe \
     blast \
     sierrapy \
     mafft \
-    modeltest-ng
+    modeltest-ng \
+    raxml
 
 ```
 
@@ -223,7 +224,7 @@ Stages to annotate consensus sequences.
 
 ##### pairwise_align 
 
-Apply correct coordinate system to final sequence(s) to facilitate downstream analyses. Input is the final sequence file in FASTA format, a reference sequence in FASTA format, and a reference GFT file. Output is a JSON file to be used in _extract_pairwise_.
+Apply correct coordinate system to final sequence(s) to facilitate downstream analyses. Input is the final sequence file in FASTA format, a reference sequence in FASTA format, and a reference GFT file. Output is a JSON file to be used in `extract_pairwise`.
 Example to execute:
 ```
 haphpipe pairwise_align --amplicons_fa final.fna --ref_fa refSequence.fasta --ref_gtf referenceSeq.gtf
@@ -231,18 +232,10 @@ haphpipe pairwise_align --amplicons_fa final.fna --ref_fa refSequence.fasta --re
 
 ##### extract_pairwise
 
-Extract sequence regions from the pairwise alignment produced in _pairwise_align_. Input is the JSON file from _pairwise_align_. Output is either an unaligned nucleotide FASTA file, an aligned nucleotide FASTA file, an amino acid FASTA file, an amplicon GTF file, or a tab-separated values (TSV) file (default: nucleotide FASTA with regions of interest from GTF file used in _pairwise_align_). 
+Extract sequence regions from the pairwise alignment produced in `pairwise_align`. Input is the JSON file from `pairwise_align`. Output is either an unaligned nucleotide FASTA file, an aligned nucleotide FASTA file, an amino acid FASTA file, an amplicon GTF file, or a tab-separated values (TSV) file (default: nucleotide FASTA with regions of interest from GTF file used in `pairwise_align`). 
 Example to execute:
 ```
 haphpipe extract_pairwise --align_json pairwise_aligned.json --refreg HIV_B.K03455.HXB2:2085-5096
-```
-
-##### annotate_from_ref
-
-Annotate consensus sequence from reference annotation. Input is JSON file from _pairwise_align_ and reference GTF file. 
-Example to execute:
-```
-haphpipe annotate_from_ref airwise_aligned.json --ref_gtf referenceSeq.gtf
 ```
 
 ##### summary_stats 
@@ -262,5 +255,21 @@ Phylogenetic stages. Multiple sequence alignment and building phylogeny options.
 Aligns sequences using MAFFT. Input is a FASTA file with sequences wanting aligned and/or a TXT file with a list of directories AND a reference GTF file.
 Example to execute: 
 ```
-haphpipe multiple_align --dir_list demo_dir_list.txt -ref_gtf referenceSeq.gtf --amplicons
+haphpipe multiple_align --dir_list demo_dir_list.txt -ref_gtf referenceSeq.gtf
+```
+
+##### model_test 
+
+Determine best-fit evolutionary model with ModelTest-NG. Input is an aligned FASTA or PHYLIP file with sequences. Output is text file with ModelTest output showing best-fit models of evolution.
+Example to execute: 
+```
+haphpipe model_test --seqs alignment.fasta
+```
+
+##### build_tree 
+
+Create Phylogenetic Tree with RAxML. Input is an aligned FASTA or PHYLIP file with sequences. Output are tre files.
+Example to execute: 
+```
+haphpipe model_test --run_full_analysis --seqs alignment.phy
 ```
