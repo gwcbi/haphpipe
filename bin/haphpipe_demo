@@ -122,7 +122,7 @@ echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
- command -v PredictHaplo-Paired >/dev/null 2>&1 || { echo >&2 "This stage requires PredictHaplo but it's not installed.  Aborting."; }
+ command -v PredictHaplo-Paired >/dev/null 2>&1 ||
  if [[ $? -eq 0 ]] ; then
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
@@ -225,7 +225,7 @@ echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
- command -v PredictHaplo-Paired >/dev/null 2>&1 || { echo >&2 "This stage requires PredictHaplo but it's not installed.  Aborting."; }
+ command -v PredictHaplo-Paired >/dev/null 2>&1
  if [[ $? -eq 0 ]] ; then
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
@@ -328,7 +328,7 @@ echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
- command -v PredictHaplo-Paired >/dev/null 2>&1 || { echo >&2 "This stage requires PredictHaplo but it's not installed.  Aborting."; }
+ command -v PredictHaplo-Paired >/dev/null 2>&1
  if [[ $? -eq 0 ]] ; then
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
@@ -431,7 +431,7 @@ echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
- command -v PredictHaplo-Paired >/dev/null 2>&1 || { echo >&2 "This stage requires PredictHaplo but it's not installed.  Aborting."; }
+ command -v PredictHaplo-Paired >/dev/null 2>&1
  if [[ $? -eq 0 ]] ; then
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
@@ -534,7 +534,7 @@ echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
- command -v PredictHaplo-Paired >/dev/null 2>&1 || { echo >&2 "This stage requires PredictHaplo but it's not installed.  Aborting."; }
+ command -v PredictHaplo-Paired >/dev/null 2>&1
  if [[ $? -eq 0 ]] ; then
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
@@ -580,7 +580,7 @@ if [[ -e ${outdir}/multiple_align/alignment_region00.fasta ]] &&\
     echo "[---$SN---] ($(date)) EXISTS: $stage alignment_region00.fasta,alignment_region01.fasta,alignment_region02.fasta"
 else
  # check for PredictHaplo
- command -v PredictHaplo-Paired >/dev/null 2>&1 || { echo >&2 "This stage requires PredictHaplo but it's not installed.  Aborting."; }
+ command -v PredictHaplo-Paired >/dev/null 2>&1
  if [[ $? -eq 0 ]] ; then
     read -r -d '' cmd1 <<EOF
 ls -d ${outdir}/SRR*/haphpipe_assemble_01 > ${outdir}/dir_list.txt &&\
