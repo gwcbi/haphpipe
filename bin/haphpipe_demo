@@ -666,12 +666,15 @@ fi
 stage="build_tree"
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
-if [[ -e ${outdir}/amplicon_assembly.fna ]]; then
-    echo "[---$SN---] ($(date)) EXISTS: $stage amplicon_assembly.fna"
+if [[ -e ${outdir}/build_tree/RAxML_bipartitionsBranchLabels.alignment_region00 ]]; then
+    echo "[---$SN---] ($(date)) EXISTS: $stage RAxML_bipartitionsBranchLabels.alignment_region00, RAxML_bipartitionsBranchLabels.alignment_region01"
 else
-    for alignment in ${outdir}/multiple_align/alignment_region??.phy; do
-        reg=${alignment%.fasta}
-        read -r -d '' cmd <<EOF
+    # check for PredictHaplo
+    command -v PredictHaplo-Paired >/dev/null 2>&1
+    if [[ $? -eq 0 ]] ; then
+        for alignment in ${outdir}/multiple_align/alignment_region??.phy; do
+            reg=${alignment%.phy}
+            read -r -d '' cmd <<EOF
 haphpipe build_tree\
  --run_full_analysis\
  --seqs ${alignment}\
@@ -680,12 +683,31 @@ haphpipe build_tree\
  --logfile ${outdir}/haphpipe.out\
  --outdir ${outdir}
 EOF
-        echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
-        eval $cmd
+            echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
+            eval $cmd
 
-        [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
-            (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
-    done
+            [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+                (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+        done
+    else
+        for alignment in ${outdir}/multiple_align/alignment_region00.phy ${outdir}/multiple_align/alignment_region01.phy; do
+            reg=${alignment%.phy}
+            read -r -d '' cmd <<EOF
+haphpipe build_tree\
+ --run_full_analysis\
+ --seqs ${alignment}\
+ --output_name $(basename $reg)\
+ --model GTRGAMMAX\
+ --logfile ${outdir}/haphpipe.out\
+ --outdir ${outdir}
+EOF
+            echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd\n"
+            eval $cmd
+
+            [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
+                (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
+        done
+    fi
 fi
 
 #---Complete job
