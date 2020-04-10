@@ -30,11 +30,11 @@ def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
     group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
                         help='Output directory')
+    group1.add_argument('--refonly', action='store_true',
+                        help='Does not run entire demo, only pulls the reference files')
     parser.set_defaults(func=demo)
 
-def demo(
-        outdir="."
-    ):
+def demo(outdir=".", refonly=False):
     try:
         _ = FileNotFoundError()
     except NameError:
@@ -72,17 +72,22 @@ def demo(
 
     print(_base, file=sys.stderr)
 
-    # Check for executable
-    sysutils.check_dependency("fastq-dump")
+    if refonly is False:
+        print("Setting up demo directories and references in outdirectory %s. Demo samples will now run." % os.path.join(outdir, 'haphpipe_demo'))
 
-    # Demo command
-    cmd1 = [
-        'haphpipe_demo', 'haphpipe_demo'
-    ]
+        # Check for executable
+        sysutils.check_dependency("fastq-dump")
 
-    sysutils.command_runner(
-        [cmd1, ], 'demo'
-    )
+        # Demo command
+        cmd1 = [
+            'haphpipe_demo', 'haphpipe_demo'
+        ]
+
+        sysutils.command_runner(
+            [cmd1, ], 'demo'
+        )
+    else:
+        print("Demo was run with --refonly. References are now in outdirectory: %s." %refs)
 
 def console():
     """ Entry point

@@ -31,7 +31,8 @@ conda create -n haphpipe \
     sierrapy \
     mafft \
     modeltest-ng \
-    raxml
+    raxml \
+    sra-tools
 
 ```
 
@@ -64,7 +65,30 @@ __4. Install HAPHPIPE__
 pip install git+git://github.com/gwcbi/haphpipe.git
 ```
 
+## Demo
 
+After successful installation, the demo dataset can be run to ensure HAPHPIPE is installed and set up correctly. 
+
+Running the demo is simple and requires a single command:
+`hp_demo`
+
+A specific outdirectory can be specified by:
+`hp_demo --outdir $outdir_name`
+
+The output of the entire demo is as such
+[put fig here]()
+
+If running the entire demo is not desired, this command can be executed to just pull the references included in HAPHPIPE into the directory that is specified (default is `.`).
+
+`hp_demo --refonly`
+
+Output on the terminal is as such, and the three HIV reference files are located in the subdirectory `refs`. See the [User Guide](https://gwcbi.github.io/haphpipe_docs/install/#reference-files) for more information regarding these reference files.
+
+```
+/base/directory/path/of/haphpipe)
+Demo was run with --refonly. References are now in outdirectory: $outdir_name/haphpipe_demo/refs.
+
+```
 
 ## Pipelines
 
@@ -220,7 +244,7 @@ haphpipe ph_parser best.fas
 
 ### Description
 
-Stages to annotate consensus sequences.
+Stages to annotate and extract regions from sequences using a reference sequence and GTF file. Also includes a module that calculates summary statistics.
 
 ##### pairwise_align 
 
@@ -248,7 +272,7 @@ haphpipe summary_stats --dir_list demo_dir_list.txt --amplicons
 
 ### Phylo
 
-Phylogenetic stages. Multiple sequence alignment and building phylogeny options.
+Phylogenetic stages that include multiple sequence alignment, determination of best-fit model of evolution, and building phylogeny options.
 
 ##### multiple_align 
 
