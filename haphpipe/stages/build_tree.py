@@ -146,7 +146,7 @@ def stageparser(parser):
 
 
 def build_tree(seqs=None, data_type='NUC', run_full_analysis=None, output_name='build_tree.tre', outdir='.',
-               treedir='build_tree', model='GTRGAMMAIX',
+               treedir='hp_build_tree', model='GTRGAMMAIX',
                outgroup=None, parsimony_seed=1234,
                wgtFile=None, secsub=None, bootstrap=None, bootstrap_threshold=None, numCat=None,
                rand_starting_tree=None, convergence_criterion=None,

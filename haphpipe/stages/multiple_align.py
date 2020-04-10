@@ -284,7 +284,7 @@ def multiple_align(seqs=None, dir_list=None, ref_gtf=None, out_align="alignment.
         raise sysutils.MissingRequiredArgument(msg)
 
     ## create output directory
-    msadir = os.path.join(outdir, 'multiple_align')
+    msadir = os.path.join(outdir, 'hp_multiple_align')
 
     cmd2 = ['mkdir -p', msadir]
     sysutils.command_runner([cmd2, ], 'multiple_align', quiet, None, debug)
