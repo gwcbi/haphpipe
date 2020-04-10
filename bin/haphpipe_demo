@@ -145,10 +145,10 @@ EOF
 EOF
        echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd2\n"
        eval $cmd2
-    done
- fi
 
- cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
+       cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
+     done
+ fi
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -247,10 +247,10 @@ EOF
 EOF
        echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd2\n"
        eval $cmd2
+
+       cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
     done
  fi
-
- cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -349,10 +349,10 @@ EOF
 EOF
        echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd2\n"
        eval $cmd2
+
+       cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
     done
  fi
-
- cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -451,10 +451,10 @@ EOF
 EOF
        echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd2\n"
        eval $cmd2
+
+       cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
     done
  fi
-
- cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -553,10 +553,10 @@ EOF
 EOF
        echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd2\n"
        eval $cmd2
+
+       cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
     done
  fi
-
- cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
