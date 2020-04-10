@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 ###############################################################################
-# Demo pipeline implementing amplicon assembly using a denovo approach
-#(haphpipe_assemble_01). Reads are error-corrected and used to refine
+# Demo pipeline implementing amplicon assembly using a reference-based approach
+#(haphpipe_assemble_02). Reads are error-corrected and used to refine
 # the initial assembly, with up to 5 refinement steps. PredictHaplo runs if it
 # is loaded, and multiple sequence alignment is conducted with the final.fna
 # (and haplotypes if there).
@@ -16,8 +16,8 @@ $SN <outdir>
 
 ----- HAPHPIPE demo -----
 
-This demo implements amplicon assembly using a denovo approach. Five SRA
-samples are pulled with fastq-dump, assembled with haphpipe_assemble_01,
+This demo implements amplicon assembly using a reference-based approach. Five SRA
+samples are pulled with fastq-dump, assembled with haphpipe_assemble_02,
 multiple aligned and a phylogeny estimated. If PredictHaplo is installed,
 haplotypes are also predicted followed by MSA and a phylogeny estimated.
 
@@ -52,7 +52,7 @@ t1=$(date +"%s")
 ### We split up the samples, instead of looping through them for fastq-dump ###
 ### because sometimes the fastq-dump/NCBI doesn't work. It was more helpful ###
 ### to see when a sample failed this way rather than a loop for fastq-dump  ###
-### then a loop for running haphpipe_assemble_01.                           ###
+### then a loop for running haphpipe_assemble_02.                           ###
 ###############################################################################
 # Step 2a: Sample 1: SRR8525886
 ###############################################################################
@@ -89,23 +89,22 @@ if
 
 fi
 
-# Step 2: Haphpipe_assemble_01
-pipeline="haphpipe_assemble_01"
+# Step 2: Haphpipe_assemble_02
+pipeline="haphpipe_assemble_02"
 echo -e "\n[---$SN---] ($(date)) Stage: $pipeline"
 
 # checking for both fastq files and final.fna
 if [[ -e ${outdir}/${sra}/${sra}_1.fastq ]] &&\
    [[ -e ${outdir}/${sra}/${sra}_2.fastq ]] &&\
-   [[ -e $outdir/${sra}/haphpipe_assemble_01/final.fna ]]; then
+   [[ -e $outdir/${sra}/${pipeline}/final.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $pipeline final.fna for sample ${sra}"
 else
    read -r -d '' cmd2 <<EOF
-haphpipe_assemble_01 ${outdir}/${sra}/${sra}_1.fastq\
+${pipeline} ${outdir}/${sra}/${sra}_1.fastq\
  ${outdir}/${sra}/${sra}_2.fastq\
- ${outdir}/refs/HIV_B.K03455.HXB2.fasta\
- ${outdir}/refs/HIV_B.K03455.HXB2.gtf\
+ ${outdir}/refs/HIV_B.K03455.HXB2.amplicons.fasta\
  ${sra}\
- ${outdir}/${sra}/haphpipe_assemble_01
+ ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $pipeline command for ${sra}:\n\n$cmd2\n"
     eval $cmd2
@@ -119,7 +118,7 @@ fi
 stage="predict_haplo"
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
-if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
+if [[ -e ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
  command -v PredictHaplo-Paired >/dev/null 2>&1 ||
@@ -127,20 +126,20 @@ else
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
 haphpipe predict_haplo\
- --fq1 ${outdir}/${sra}/haphpipe_assemble_01/corrected_1.fastq\
- --fq2 ${outdir}/${sra}/haphpipe_assemble_01/corrected_2.fastq\
- --ref_fa ${outdir}/${sra}/haphpipe_assemble_01/final.fna\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
- --outdir ${outdir}/${sra}/haphpipe_assemble_01
+ --fq1 ${outdir}/${sra}/${pipeline}/corrected_1.fastq\
+ --fq2 ${outdir}/${sra}/${pipeline}/corrected_2.fastq\
+ --ref_fa ${outdir}/${sra}/${pipeline}/final.fna\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
+ --outdir ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd1\n"
     eval $cmd1
 
-    for ph in ${outdir}/${sra}/haphpipe_assemble_01/PH*; do
+    for ph in ${outdir}/${sra}/${pipeline}/PH*; do
         read -r -d '' cmd2 <<EOF
  haphpipe ph_parser\
  --haplotypes_fa $ph/PH*.best_*.fas\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
  --outdir ${ph}\
  --prefix ${sra}_$(basename $ph)
 EOF
@@ -149,7 +148,7 @@ EOF
     done
  fi
 
- cat ${outdir}/${sra}/haphpipe_assemble_01/PH*/ph_haplotypes.fna > ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna
+ cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -192,23 +191,22 @@ if
 
 fi
 
-# Step 2: Haphpipe_assemble_01
-pipeline="haphpipe_assemble_01"
+# Step 2: Haphpipe_assemble_02
+pipeline="haphpipe_assemble_02"
 echo -e "\n[---$SN---] ($(date)) Stage: $pipeline"
 
 # checking for both fastq files and final.fna
 if [[ -e ${outdir}/${sra}/${sra}_1.fastq ]] &&\
    [[ -e ${outdir}/${sra}/${sra}_2.fastq ]] &&\
-   [[ -e $outdir/${sra}/haphpipe_assemble_01/final.fna ]]; then
+   [[ -e $outdir/${sra}/${pipeline}/final.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $pipeline final.fna for sample ${sra}"
 else
    read -r -d '' cmd2 <<EOF
-haphpipe_assemble_01 ${outdir}/${sra}/${sra}_1.fastq\
+${pipeline} ${outdir}/${sra}/${sra}_1.fastq\
  ${outdir}/${sra}/${sra}_2.fastq\
- ${outdir}/refs/HIV_B.K03455.HXB2.fasta\
- ${outdir}/refs/HIV_B.K03455.HXB2.gtf\
+ ${outdir}/refs/HIV_B.K03455.HXB2.amplicons.fasta\
  ${sra}\
- ${outdir}/${sra}/haphpipe_assemble_01
+ ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $pipeline command for ${sra}:\n\n$cmd2\n"
     eval $cmd2
@@ -222,7 +220,7 @@ fi
 stage="predict_haplo"
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
-if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
+if [[ -e ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
  command -v PredictHaplo-Paired >/dev/null 2>&1
@@ -230,20 +228,20 @@ else
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
 haphpipe predict_haplo\
- --fq1 ${outdir}/${sra}/haphpipe_assemble_01/corrected_1.fastq\
- --fq2 ${outdir}/${sra}/haphpipe_assemble_01/corrected_2.fastq\
- --ref_fa ${outdir}/${sra}/haphpipe_assemble_01/final.fna\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
- --outdir ${outdir}/${sra}/haphpipe_assemble_01
+ --fq1 ${outdir}/${sra}/${pipeline}/corrected_1.fastq\
+ --fq2 ${outdir}/${sra}/${pipeline}/corrected_2.fastq\
+ --ref_fa ${outdir}/${sra}/${pipeline}/final.fna\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
+ --outdir ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd1\n"
     eval $cmd1
 
-    for ph in ${outdir}/${sra}/haphpipe_assemble_01/PH*; do
+    for ph in ${outdir}/${sra}/${pipeline}/PH*; do
         read -r -d '' cmd2 <<EOF
  haphpipe ph_parser\
  --haplotypes_fa $ph/PH*.best_*.fas\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
  --outdir ${ph}\
  --prefix ${sra}_$(basename $ph)
 EOF
@@ -252,7 +250,7 @@ EOF
     done
  fi
 
- cat ${outdir}/${sra}/haphpipe_assemble_01/PH*/ph_haplotypes.fna > ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna
+ cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -295,23 +293,22 @@ if
 
 fi
 
-# Step 2: Haphpipe_assemble_01
-pipeline="haphpipe_assemble_01"
+# Step 2: Haphpipe_assemble_02
+pipeline="haphpipe_assemble_02"
 echo -e "\n[---$SN---] ($(date)) Stage: $pipeline"
 
 # checking for both fastq files and final.fna
 if [[ -e ${outdir}/${sra}/${sra}_1.fastq ]] &&\
    [[ -e ${outdir}/${sra}/${sra}_2.fastq ]] &&\
-   [[ -e $outdir/${sra}/haphpipe_assemble_01/final.fna ]]; then
+   [[ -e $outdir/${sra}/${pipeline}/final.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $pipeline final.fna for sample ${sra}"
 else
    read -r -d '' cmd2 <<EOF
-haphpipe_assemble_01 ${outdir}/${sra}/${sra}_1.fastq\
+${pipeline} ${outdir}/${sra}/${sra}_1.fastq\
  ${outdir}/${sra}/${sra}_2.fastq\
- ${outdir}/refs/HIV_B.K03455.HXB2.fasta\
- ${outdir}/refs/HIV_B.K03455.HXB2.gtf\
+ ${outdir}/refs/HIV_B.K03455.HXB2.amplicons.fasta\
  ${sra}\
- ${outdir}/${sra}/haphpipe_assemble_01
+ ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $pipeline command for ${sra}:\n\n$cmd2\n"
     eval $cmd2
@@ -325,7 +322,7 @@ fi
 stage="predict_haplo"
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
-if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
+if [[ -e ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
  command -v PredictHaplo-Paired >/dev/null 2>&1
@@ -333,20 +330,20 @@ else
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
 haphpipe predict_haplo\
- --fq1 ${outdir}/${sra}/haphpipe_assemble_01/corrected_1.fastq\
- --fq2 ${outdir}/${sra}/haphpipe_assemble_01/corrected_2.fastq\
- --ref_fa ${outdir}/${sra}/haphpipe_assemble_01/final.fna\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
- --outdir ${outdir}/${sra}/haphpipe_assemble_01
+ --fq1 ${outdir}/${sra}/${pipeline}/corrected_1.fastq\
+ --fq2 ${outdir}/${sra}/${pipeline}/corrected_2.fastq\
+ --ref_fa ${outdir}/${sra}/${pipeline}/final.fna\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
+ --outdir ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd1\n"
     eval $cmd1
 
-    for ph in ${outdir}/${sra}/haphpipe_assemble_01/PH*; do
+    for ph in ${outdir}/${sra}/${pipeline}/PH*; do
         read -r -d '' cmd2 <<EOF
  haphpipe ph_parser\
  --haplotypes_fa $ph/PH*.best_*.fas\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
  --outdir ${ph}\
  --prefix ${sra}_$(basename $ph)
 EOF
@@ -355,7 +352,7 @@ EOF
     done
  fi
 
- cat ${outdir}/${sra}/haphpipe_assemble_01/PH*/ph_haplotypes.fna > ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna
+ cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -398,23 +395,22 @@ if
 
 fi
 
-# Step 2: Haphpipe_assemble_01
-pipeline="haphpipe_assemble_01"
+# Step 2: Haphpipe_assemble_02
+pipeline="haphpipe_assemble_02"
 echo -e "\n[---$SN---] ($(date)) Stage: $pipeline"
 
 # checking for both fastq files and final.fna
 if [[ -e ${outdir}/${sra}/${sra}_1.fastq ]] &&\
    [[ -e ${outdir}/${sra}/${sra}_2.fastq ]] &&\
-   [[ -e $outdir/${sra}/haphpipe_assemble_01/final.fna ]]; then
+   [[ -e $outdir/${sra}/${pipeline}/final.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $pipeline final.fna for sample ${sra}"
 else
    read -r -d '' cmd2 <<EOF
-haphpipe_assemble_01 ${outdir}/${sra}/${sra}_1.fastq\
+${pipeline} ${outdir}/${sra}/${sra}_1.fastq\
  ${outdir}/${sra}/${sra}_2.fastq\
- ${outdir}/refs/HIV_B.K03455.HXB2.fasta\
- ${outdir}/refs/HIV_B.K03455.HXB2.gtf\
+ ${outdir}/refs/HIV_B.K03455.HXB2.amplicons.fasta\
  ${sra}\
- ${outdir}/${sra}/haphpipe_assemble_01
+ ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $pipeline command for ${sra}:\n\n$cmd2\n"
     eval $cmd2
@@ -428,7 +424,7 @@ fi
 stage="predict_haplo"
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
-if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
+if [[ -e ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
  command -v PredictHaplo-Paired >/dev/null 2>&1
@@ -436,20 +432,20 @@ else
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
 haphpipe predict_haplo\
- --fq1 ${outdir}/${sra}/haphpipe_assemble_01/corrected_1.fastq\
- --fq2 ${outdir}/${sra}/haphpipe_assemble_01/corrected_2.fastq\
- --ref_fa ${outdir}/${sra}/haphpipe_assemble_01/final.fna\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
- --outdir ${outdir}/${sra}/haphpipe_assemble_01
+ --fq1 ${outdir}/${sra}/${pipeline}/corrected_1.fastq\
+ --fq2 ${outdir}/${sra}/${pipeline}/corrected_2.fastq\
+ --ref_fa ${outdir}/${sra}/${pipeline}/final.fna\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
+ --outdir ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd1\n"
     eval $cmd1
 
-    for ph in ${outdir}/${sra}/haphpipe_assemble_01/PH*; do
+    for ph in ${outdir}/${sra}/${pipeline}/PH*; do
         read -r -d '' cmd2 <<EOF
  haphpipe ph_parser\
  --haplotypes_fa $ph/PH*.best_*.fas\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
  --outdir ${ph}\
  --prefix ${sra}_$(basename $ph)
 EOF
@@ -458,7 +454,7 @@ EOF
     done
  fi
 
- cat ${outdir}/${sra}/haphpipe_assemble_01/PH*/ph_haplotypes.fna > ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna
+ cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -501,23 +497,22 @@ if
 
 fi
 
-# Step 2: Haphpipe_assemble_01
-pipeline="haphpipe_assemble_01"
+# Step 2: Haphpipe_assemble_02
+pipeline="haphpipe_assemble_02"
 echo -e "\n[---$SN---] ($(date)) Stage: $pipeline"
 
 # checking for both fastq files and final.fna
 if [[ -e ${outdir}/${sra}/${sra}_1.fastq ]] &&\
    [[ -e ${outdir}/${sra}/${sra}_2.fastq ]] &&\
-   [[ -e $outdir/${sra}/haphpipe_assemble_01/final.fna ]]; then
+   [[ -e $outdir/${sra}/${pipeline}/final.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $pipeline final.fna for sample ${sra}"
 else
    read -r -d '' cmd2 <<EOF
-haphpipe_assemble_01 ${outdir}/${sra}/${sra}_1.fastq\
+${pipeline} ${outdir}/${sra}/${sra}_1.fastq\
  ${outdir}/${sra}/${sra}_2.fastq\
- ${outdir}/refs/HIV_B.K03455.HXB2.fasta\
- ${outdir}/refs/HIV_B.K03455.HXB2.gtf\
+ ${outdir}/refs/HIV_B.K03455.HXB2.amplicons.fasta\
  ${sra}\
- ${outdir}/${sra}/haphpipe_assemble_01
+ ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $pipeline command for ${sra}:\n\n$cmd2\n"
     eval $cmd2
@@ -531,7 +526,7 @@ fi
 stage="predict_haplo"
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
-if [[ -e ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna ]]; then
+if [[ -e ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna ]]; then
     echo "[---$SN---] ($(date)) EXISTS: $stage corrected_1.fastq,corrected_2.fastq"
 else
  command -v PredictHaplo-Paired >/dev/null 2>&1
@@ -539,20 +534,20 @@ else
     echo -e "[---$SN---] ($(date)) $stage PredictHaplo present"
     read -r -d '' cmd1 <<EOF
 haphpipe predict_haplo\
- --fq1 ${outdir}/${sra}/haphpipe_assemble_01/corrected_1.fastq\
- --fq2 ${outdir}/${sra}/haphpipe_assemble_01/corrected_2.fastq\
- --ref_fa ${outdir}/${sra}/haphpipe_assemble_01/final.fna\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
- --outdir ${outdir}/${sra}/haphpipe_assemble_01
+ --fq1 ${outdir}/${sra}/${pipeline}/corrected_1.fastq\
+ --fq2 ${outdir}/${sra}/${pipeline}/corrected_2.fastq\
+ --ref_fa ${outdir}/${sra}/${pipeline}/final.fna\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
+ --outdir ${outdir}/${sra}/${pipeline}
 EOF
     echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd1\n"
     eval $cmd1
 
-    for ph in ${outdir}/${sra}/haphpipe_assemble_01/PH*; do
+    for ph in ${outdir}/${sra}/${pipeline}/PH*; do
         read -r -d '' cmd2 <<EOF
  haphpipe ph_parser\
  --haplotypes_fa $ph/PH*.best_*.fas\
- --logfile ${outdir}/${sra}/haphpipe_assemble_01/haphpipe_PH.out\
+ --logfile ${outdir}/${sra}/${pipeline}/haphpipe_PH.out\
  --outdir ${ph}\
  --prefix ${sra}_$(basename $ph)
 EOF
@@ -561,7 +556,7 @@ EOF
     done
  fi
 
- cat ${outdir}/${sra}/haphpipe_assemble_01/PH*/ph_haplotypes.fna > ${outdir}/${sra}/haphpipe_assemble_01/ph_haplotypes_comb.fna
+ cat ${outdir}/${sra}/${pipeline}/PH*/ph_haplotypes.fna > ${outdir}/${sra}/${pipeline}/ph_haplotypes_comb.fna
 
     [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
         (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
@@ -583,8 +578,8 @@ else
  command -v PredictHaplo-Paired >/dev/null 2>&1
  if [[ $? -eq 0 ]] ; then
     read -r -d '' cmd1 <<EOF
-ls -d ${outdir}/SRR*/haphpipe_assemble_01 > ${outdir}/dir_list.txt &&\
-ls -d ${outdir}/SRR*/haphpipe_assemble_01/PH0* >> ${outdir}/dir_list.txt
+ls -d ${outdir}/SRR*/${pipeline} > ${outdir}/dir_list.txt &&\
+ls -d ${outdir}/SRR*/${pipeline}/PH0* >> ${outdir}/dir_list.txt
 EOF
     echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd1\n"
     eval $cmd1
@@ -607,7 +602,7 @@ EOF
   # if no PredictHaplo, execute these commands
   else
     read -r -d '' cmd1 <<EOF
-ls -d ${outdir}/SRR*/haphpipe_assemble_01 > ${outdir}/dir_list.txt
+ls -d ${outdir}/SRR*/${pipeline} > ${outdir}/dir_list.txt
 EOF
     echo -e "[---$SN---] ($(date)) $stage command:\n\n$cmd1\n"
     eval $cmd1
