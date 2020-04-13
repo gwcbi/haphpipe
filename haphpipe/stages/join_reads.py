@@ -43,6 +43,7 @@ def stageparser(parser):
                                 orientation''')
     group2.add_argument('--encoding',
                         help='Quality score encoding')
+     ###--Uzma--Why doesn't --encoding have a type or 'action='store_true'' associated with it?
 
     group3 = parser.add_argument_group('Settings')
     group3.add_argument('--ncpu', type=int,
@@ -124,6 +125,7 @@ def join_reads(
         cmd1 += ['-O']        
     cmd1 += [fq1, fq2]
 
+    ###--Uzma--Removing output files from tempdir and renaming to appropriate filename?
     cmd2 = ['mv', os.path.join(tempdir, 'out.extendedFrags.fastq'), outU, ]
     cmd3 = ['mv', os.path.join(tempdir, 'out.notCombined_1.fastq'), out1, ]
     cmd4 = ['mv', os.path.join(tempdir, 'out.notCombined_2.fastq'), out2, ]
