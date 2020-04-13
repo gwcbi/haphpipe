@@ -49,6 +49,7 @@ def stageparser(parser):
     group2 = parser.add_argument_group('Trimmomatic options')
     group2.add_argument('--adapter_file',
                         help='Adapter file')
+    ###--Uzma--Stores list and appends each argument to the list
     group2.add_argument('--trimmers', action='append', default=TRIMMERS,
                         help='Trim commands for trimmomatic')
     group2.add_argument('--encoding',
@@ -114,6 +115,7 @@ def trim_reads(
     try:
         sysutils.check_dependency('trimmomatic')
         cmd1 = ['trimmomatic']
+    ###--Uzma--If above results in an exception/error, do this?
     except PipelineStepError as e:
         if 'Trimmomatic' in os.environ:
             cmd1 = ['java', '-jar', '$Trimmomatic']
@@ -136,7 +138,7 @@ def trim_reads(
         out1 = out2 = None
         # Trimmomatic command
         cmd1 += [
-            'SE',
+            'SE',  ###--Uzma--Single-end mode
             '-threads', '%d' % ncpu,
             '-phred33' if encoding == "Phred+33" else '-phred64',
             '-summary', out_summary,
@@ -145,7 +147,9 @@ def trim_reads(
         ]
         # Specify trimming steps
         if adapter_file is not None:
-            adapter_file = adapter_file.replace('PE', 'SE')
+            adapter_file = adapter_file.replace('PE', 'SE')  ###--Uzma--Replace 'PE' with 'SE' ? 
+            ###--Uzma--ILLUMINACLIP:<fastaWithAdaptersEtc>:<seed mismatches>:<palindrome clip threshold>:<simple clip threshold> 
+            ###--Uzma--Why .append instead of cmd += ?
             cmd1.append("ILLUMINACLIP:%s:2:30:10" % adapter_file)
         cmd1 += trimmers
         
