@@ -133,6 +133,7 @@ def align_reads(
 
     # Identify correct command for GATK
     GATK_BIN = sysutils.determine_dependency_path(['gatk', 'gatk3'])
+    ###--Uzma--Check whether shell command for gatk or gatk3 can be called, returns valid dependency (return prog) or gives error message
 
     # Set JVM heap argument (for GATK)
     JAVA_HEAP = '_JAVA_OPTIONS="-Xmx%dg"' % xmx
@@ -145,6 +146,7 @@ def align_reads(
     tempdir = sysutils.create_tempdir('align_reads', None, quiet, logfile)
     
     # Copy and index initial reference
+    ###--Uzma--Is initial.fasta a given referene genome? Where does the user input it?
     curref = os.path.join(tempdir, 'initial.fasta')
     cmd1 = ['cp', ref_fa, curref]
     cmd2 = ['samtools', 'faidx', curref]
@@ -180,6 +182,7 @@ def align_reads(
         sysutils.command_runner(
             [cmd5,], 'align_reads:bowtie2', quiet, logfile, debug
         )
+    ###--Uzma--Does this prevent bowtie2 from running more than once? If output file exists --> error 
     except PipelineStepError as e:
         if os.path.exists(out_bt2):
             with open(out_bt2, 'r') as fh:
