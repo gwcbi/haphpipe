@@ -97,6 +97,8 @@ def assemble_scaffold(
 
     # Output scaffolds as FASTA
     with open(out_scaffold, 'w') as outh:
+        ###--Uzma--I know scaffolds{} is the output of alignutils.assemble_to_ref() but what exactly does it contain?
+        ###--The ref with the best hit?
         for ref in sorted(scaffolds.keys()):
             n = '%s.%s' % (ref.split('.')[0], seqname)
             s = scaffolds[ref].scaffold()
@@ -113,6 +115,7 @@ def assemble_scaffold(
     with open(out_aln, 'w') as outh:
         for ref in sorted(scaffolds.keys()):
             n = '%s.%s' % (ref.split('.')[0], seqname)
+            ###--Uzma--Not sure what .raln and .qaln do
             print('>REF|%s\n%s' % (n, scaffolds[ref].raln()), file=outh)
             print('>%s\n%s' % (n, scaffolds[ref].qaln()), file=outh)
 
