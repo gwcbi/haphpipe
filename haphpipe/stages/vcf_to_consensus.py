@@ -24,7 +24,9 @@ __copyright__ = "Copyright (C) 2019 Matthew L. Bendall"
 
 VCFCOLS = ['CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']
 idx = {v:i for i,v in enumerate(VCFCOLS)}
+###--Uzma--What does'i' represent?
 
+###--Uzma--Lines 30 - 46 are difficult to work through because I didn't understand the syntax of id{}
 def parse_vcf_sample(row, sampidx=0):
     """ Parse row in VCF file
     """
@@ -141,6 +143,7 @@ def vcf_to_consensus(
         lines = (l.decode('utf-8').strip('\n') for l in gzip.open(vcf, 'rb'))
     else:
         lines = (l.strip('\n') for l in open(vcf, 'r'))
+        ###--Uzma--strip after whitespace for every line in vcf file, store in list
 
     # Parse headers
     for l in lines:
