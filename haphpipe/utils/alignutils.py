@@ -40,10 +40,10 @@ class ReferenceAlignment(object):
 
     def __init__(self, raln=None, qaln=None, rname=None, qname=None):
         if raln is not None and qaln is not None:
-            self.load_alignment(raln, qaln)
+            self.load_alignment(raln, qaln) ###--Uzma--Returns numpy array?
         else:
-            self.aln_positions = []
-            self._rpos_to_apos = {}
+            self.aln_positions = []   ###--Uzma--Number of alignment positions
+            self._rpos_to_apos = {}   ###--Uzma--not sure about the remaining methods (see lines 77-98)
             self._qpos_to_apos = {}
             self.alen = 0
             self.rstart = self.rend = 0
@@ -54,14 +54,17 @@ class ReferenceAlignment(object):
     def load_alignment(self, raln, qaln):
         assert len(raln) == len(
             qaln), 'Error: Alignments are different lengths'
-        self.aln_positions = []
+        self.aln_positions = []  
+        ###--Uzma--Place alignment positions in list
 
         # Convert all gapchars to '.'
         for rb, qb in zip(raln, qaln):
-            rb = '.' if rb in self.gapchar else rb
+            ###--Uzma--Convert to '.' if gapchar('.-'), otherwise, leave be
+            rb = '.' if rb in self.gapchar else rb 
             qb = '.' if qb in self.gapchar else qb
             self.aln_positions.append((rb, qb))
-
+            
+        ###--Uzma--Why create self.alen?
         self.alen = len(self.aln_positions)
         self._index_alignment()
 
