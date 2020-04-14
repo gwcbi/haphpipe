@@ -47,8 +47,8 @@ if len(seqs) == len(freqs):
 if len(freqs) == len(cumfreq):
   for n in range(args.num):
     s = random.random()
-    index = bisect(cumfreq, s)
-    fasta.append(seqs[index])
+    index = bisect(cumfreq, s)  ###--Uzma--Index is the insertion point for s needed to keep cumfreq ordered
+    fasta.append(seqs[index])   
 
 if len(fasta) == args.num:
   fafile = open(args.out, 'w')
