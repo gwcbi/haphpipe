@@ -137,6 +137,7 @@ def align_reads(
 
     # Set JVM heap argument (for GATK)
     JAVA_HEAP = '_JAVA_OPTIONS="-Xmx%dg"' % xmx
+    ###--Uzma--Not sure what this does
 
     # Outputs
     out_aligned = os.path.join(outdir, 'aligned.bam')
@@ -219,6 +220,7 @@ def align_reads(
         cmd8 += ['REMOVE_DUPLICATES=true', ]
     sysutils.command_runner(
         [cmd8,], 'align_reads:markdups', quiet, logfile, debug
+     ###--Uzma--How does the syntax of align_reads:markdups work?
     )
     cur_bam = os.path.join(tempdir, 'rmdup.bam')
     
@@ -244,7 +246,7 @@ def align_reads(
             '-o', os.path.join(tempdir, 'realign.bam')
         ]
         sysutils.command_runner(
-            [cmd9, cmd10, ], 'align_reads:realign', quiet, logfile, debug
+            [cmd9, cmd10, ], 'align_reads:realign', quiet, logfile, debug  ###--Uzma--comment on line 223
         )
         cur_bam = os.path.join(tempdir, 'realign.bam')
     
@@ -253,7 +255,7 @@ def align_reads(
         msg = "BAM does not exist: %s" % cur_bam
         raise sysutils.PipelineStepError(msg)
     
-    cmd11a = ['rm', '-f', out_aligned, ]
+    cmd11a = ['rm', '-f', out_aligned, ]  ###--Uzma--out_aligned is being deleted
     cmd11b = ['mv', cur_bam, out_aligned, ]
     cmd11c = ['samtools', 'index', out_aligned, ]
     sysutils.command_runner(
