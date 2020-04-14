@@ -92,6 +92,7 @@ def call_variants(
 
     # Set JVM heap argument (for GATK)
     JAVA_HEAP = '_JAVA_OPTIONS="-Xmx%dg"' % xmx
+    ###--Uzma--Same as align_reads, not sure of function
 
     # Outputs
     out_vcf = os.path.join(outdir, 'variants.vcf.gz')    
@@ -107,6 +108,7 @@ def call_variants(
             'R=%s' % curref, 'O=%s' % os.path.join(tempdir, 'initial.dict')]
         
     # UnifiedGenotyper
+    ###--Uzma--GATK SNP caller stage
     cmd4 = [JAVA_HEAP, GATK_BIN, '-T', 'UnifiedGenotyper',
         '--use_jdk_deflater', '--use_jdk_inflater',
         '--num_threads', '%d' % ncpu,
@@ -121,6 +123,7 @@ def call_variants(
         '-R', curref,
         '-o', out_vcf,
     ]
+    ###--Uzma--Allow outputting of calls
     if emit_all:
         cmd4 += ['-out_mode', 'EMIT_ALL_SITES']
 
