@@ -67,7 +67,7 @@ config_template = '''### configuration file for the HIVhaplotyper
 %(include_deletions)s
 '''
 
-
+###--Uzma--Why aren't prefix and ref_fa included?
 DEFAULTS = {
              'do_visualize': 1,
              'have_true_haplotypes': 0,
@@ -88,10 +88,14 @@ DEFAULTS = {
 
 def rename_best(d, rn):
     fasta = glob(os.path.join(d, '%s*global*.fas' % rn))
-    coords = [re.match('\S+global_(\d+)_(\d+).fas', f) for f in fasta]
+    ###--Uzma--Matches any whitespace character before 'global' and two series of digits separated by '_'
+    coords = [re.match('\S+global_(\d+)_(\d+).fas', f) for f in fasta] 
+    ###--Uzma--If match was made, converts groups into a  list of ints
     coords = [list(map(int, m.groups())) if m else [0,0] for m in coords]
     sizes = [c[1]-c[0] for c in coords]
     if max(sizes) == 0: print("WARNING: Max sizes is 0.", file=sys.stderr)
+    ###--Uzma--Returns index of the largest number in list sizes()
+    ###--Uzma--But if it's size = rather than =+, isn't size only going to contain 1 value?
     bestidx = sizes.index(max(sizes))
     bestfile = '%s.best_%d_%d.fas' % (rn, coords[bestidx][0], coords[bestidx][1])
     if os.path.exists(os.path.join(d, bestfile)):
@@ -235,6 +239,7 @@ def predict_haplo(
         sysutils.log_message(msg, quiet, logfile)
 
         # rename the predicthaplo number (PH##) to include region (now: PH##_reg)
+        ###--Uzma--it might be helpful to give more above^ examples when using re.match() so users know what the original string looked like
         ph = '%s_%s' % (ph, rname.split('|')[-2])
 
         # Construct params specific for region
