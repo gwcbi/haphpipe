@@ -70,6 +70,8 @@ def ph_parser(
     freq = []
     fasta = []
     newseq = None
+    ###--Uzma--I understand what each part is doing, but it's difficult to keep track of why because I'm not sure how the haplotype file 
+    ###--is suposed to be formatted
     ph = os.path.basename(haplotypes_fa).split(".")[0]
     for l in open(haplotypes_fa, 'r'):
         l = l.strip('\n')
@@ -77,7 +79,7 @@ def ph_parser(
             num_hap += 1
             if newseq is not None:
                 fasta.append(newseq)
-            newseq = [ph, l.strip(">"), None, ""]
+            newseq = [ph, l.strip(">"), None, ""] ###--Uzma--What does  '...None, ""]' do?
         elif l.startswith(';'):
             parts = l.strip(';').split(':')
             if parts[0] == 'Freq':
@@ -96,6 +98,7 @@ def ph_parser(
         freq_sqrd = [x ** 2 for x in freq]
         freq_sqrd_sum = sum(freq_sqrd)
 
+        ###--Uzma--Why 7000?
         hap_div = ((old_div(7000, (7000 - 1))) * (1 - freq_sqrd_sum))
 
         print("PH_num_hap %s" % num_hap, file=summary_txt)
