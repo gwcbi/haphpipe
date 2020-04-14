@@ -82,7 +82,7 @@ def stageparser(parser):
                         help='Print commands but do not run')
     parser.set_defaults(func=refine_assembly)
 
-
+###--Uzma--Like with denovo_assemble, I'm not sure how a wrapper function works and when/why you would implement it
 def refine_assembly(**kwargs):
     max_step = kwargs.pop('max_step')
     if max_step == 1:
@@ -101,7 +101,7 @@ def refine_assembly_step(
     ):
     # Temporary directory
     tempdir = sysutils.create_tempdir('refine_assembly', None, quiet, logfile)
-
+   
     if subsample is not None:
         seed = seed if seed is not None else random.randrange(1, 1000)
         full1, full2, fullU = fq1, fq2, fqU
@@ -137,7 +137,7 @@ def refine_assembly_step(
         out_refined = os.path.join(outdir, 'refined.fna')
         out_bt2 = os.path.join(outdir, 'refined_bt2.out')
     else:
-        out_refined = os.path.join(outdir, 'refined.%02d.fna' % iteration)
+        out_refined = os.path.join(outdir, 'refined.%02d.fna' % iteration)  ###--Uzma--Each iteration output given different filename?
         out_bt2 = os.path.join(outdir, 'refined_bt2.%02d.out' % iteration)
 
     shutil.copy(tmp_fasta, out_refined)
@@ -148,10 +148,10 @@ def refine_assembly_step(
 
     return out_refined, out_bt2
 
-
+###--Uzma--Why are refine_assembly() and progressive_refine_assembly() separate?
 def progressive_refine_assembly(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
-        max_step=None, subsample=None, seed=None, sample_id='sampleXX',
+        max_step=None, subsample=None, seed=None, sample_id='sampleXX', ###--Uzma--How does syntax of sampleXX work?
         ncpu=1, xmx=sysutils.get_java_heap_size(),
         keep_tmp=False, quiet=False, logfile=None, debug=False,
     ):
@@ -164,11 +164,14 @@ def progressive_refine_assembly(
     #--- Initialize
     cur_asm = ref_fa
     cur_alnrate = None
-    assemblies = [OrderedDict(), ]
+    assemblies = [OrderedDict(), ] ###--Uzma--What is OrderDict? How does the syntax work?
+    ###--Uzma--Last index of list is contains sequence header. Is this like list.append() ?
     for s in SeqIO.parse(cur_asm, 'fasta'):
         assemblies[-1][s.id] = s
+        
     
     # Message log for summary
+    ###--Uzma--What are diffs and alnrate?
     summary = [
         ['iteration', 'alnrate', 'diffs'] + ['diff:%s' % s for s in assemblies[0].keys()]
     ]
@@ -192,9 +195,13 @@ def progressive_refine_assembly(
             poss0 = [k for k in assemblies[-1].keys() if sequtils.seqid_match(id1, k)]
             if len(poss0) == 1:
                 seq0 = assemblies[-1][poss0[0]]
+             ###--Uzma--Why did you want to raise PipelineStepError here? If alignments differ, does that not mean more 
+             ###--iterative refinements are needed?
             else:
                 raise PipelineStepError("Could not match sequence %s" % id1)
+            ###--Uzma--Do a global alignment 
             alns = pairwise2.align.globalms(seq1.seq, seq0.seq, 2, -1, -3, -1)
+            ###--Uzma--Not sure what all the variables mean
             d = min(sum(nc != cc for nc, cc in zip(t[0], t[1])) for t in alns)
             diffs[id1] = d
 
@@ -213,6 +220,8 @@ def progressive_refine_assembly(
                 new_alnrate = float(m.group(1))
 
         # Create messages for log
+        ###--Uzma--message outputted on terminal?
+        ###--Uzma--from here to line 255 I'm unsure of what's going on
         row = [str(i), '%.02f' % new_alnrate, '%d' % total_diffs, ]
         for k0 in assemblies[0].keys():
             poss1 = [k for k in diffs.keys() if sequtils.seqid_match(k, k0)]
