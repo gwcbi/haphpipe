@@ -148,7 +148,8 @@ def refine_assembly_step(
 
     return out_refined, out_bt2
 
-###--Uzma--Why are refine_assembly() and progressive_refine_assembly() separate?
+###--Uzma--refine_assembly() create for use withing progressive_refine_assembly() ? Like align_reads and call_variants is 
+###--within refine_assembly() ?
 def progressive_refine_assembly(
         fq1=None, fq2=None, fqU=None, ref_fa=None, outdir='.',
         max_step=None, subsample=None, seed=None, sample_id='sampleXX', ###--Uzma--How does syntax of sampleXX work?
@@ -171,7 +172,7 @@ def progressive_refine_assembly(
         
     
     # Message log for summary
-    ###--Uzma--What are diffs and alnrate?
+    ###--Uzma--What are diffs and alnrate have not been set to anything at this stage?
     summary = [
         ['iteration', 'alnrate', 'diffs'] + ['diff:%s' % s for s in assemblies[0].keys()]
     ]
@@ -179,6 +180,7 @@ def progressive_refine_assembly(
     # Seed random number generator
     random.seed(seed)
     
+    ###--Uzma--for loop for iterative refinement?
     for i in range(1, max_step+1):
         # Generate a refined assembly
         tmp_refined, tmp_bt2 = refine_assembly_step(
@@ -189,6 +191,7 @@ def progressive_refine_assembly(
         )
 
         # Check whether alignments are different
+        ###--Uzma--Outputs of two consecutive refine_assembly() outputs are compared to see if there is additional improvement?
         diffs = OrderedDict()
         new_seqs = OrderedDict((s.id, s) for s in SeqIO.parse(tmp_refined, 'fasta'))
         for id1, seq1 in new_seqs.items():
@@ -220,8 +223,7 @@ def progressive_refine_assembly(
                 new_alnrate = float(m.group(1))
 
         # Create messages for log
-        ###--Uzma--message outputted on terminal?
-        ###--Uzma--from here to line 255 I'm unsure of what's going on
+        ###--Uzma--from here to line 237 I'm unsure of what's going on
         row = [str(i), '%.02f' % new_alnrate, '%d' % total_diffs, ]
         for k0 in assemblies[0].keys():
             poss1 = [k for k in diffs.keys() if sequtils.seqid_match(k, k0)]
