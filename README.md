@@ -8,32 +8,12 @@ Our full User Guide is available [here](https://gwcbi.github.io/haphpipe_docs/).
 
 ## Installation
 
-__1. Create a conda environment with the following dependencies__
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/)
+
+__1. Create a conda environment for HAPHPIPE__
 
 ```bash
-conda create -n haphpipe \
-    python=3.7 \
-    future \
-    pyyaml \
-    biopython \
-    seqtk \
-    bowtie2 \
-    bwa \
-    flash \
-    freebayes \
-    mummer \
-    picard \
-    trimmomatic \
-    samtools=1.9 \
-    gatk=3.8 \
-    spades \
-    blast \
-    sierrapy \
-    mafft \
-    modeltest-ng \
-    raxml \
-    sra-tools
-
+conda create -n haphpipe haphpipe
 ```
 
 __2. Activate the environment__
