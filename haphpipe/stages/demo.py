@@ -56,7 +56,10 @@ def demo(outdir=".", refonly=False):
     # This file, demo.py, is located within "stages", so the package root is
     # up one directory
     _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    _data = os.path.abspath(os.path.join(os.path.dirname(_base), 'bin/refs'))
+    _data = os.path.abspath(os.path.join(_base,'refs'))
+    #_data = os.path.abspath(os.path.join(os.path.dirname(_base), 'bin/refs'))
+    #print(_data)
+    #return
     #_data = os.path.join(_base, 'data')
 
     # get paths for reference files
