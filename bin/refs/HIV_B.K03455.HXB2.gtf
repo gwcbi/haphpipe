@@ -1,0 +1,3 @@
+HIV_B.K03455.HXB2	LANL	amplicon	2252	3869	.	+	2	name "PRRT"; primary_cds "2252-2549"; alt_cds "2550-3869";
+HIV_B.K03455.HXB2	LANL	amplicon	4230	5093	.	+	0	name "INT"; primary_cds "2085-5096"; alt_cds "5098-5619";
+HIV_B.K03455.HXB2	LANL	amplicon	6225	7757	.	+	1	name "gp120"; primary_cds "6225-8795"; alt_cds "5831-6223";
