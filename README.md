@@ -1,4 +1,4 @@
-# HAPHPIPE
+# HAPHPIPE [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/haphpipe/README.html)
 
 _**HA**plotype and **PH**ylodynamics pipeline for viral assembly, population genetics, and phylodynamics._
 
@@ -8,9 +8,9 @@ Our full User Guide is available [here](https://gwcbi.github.io/haphpipe_docs/).
 
 ## Installation
 
-[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/haphpipe/README.html)
 
-__1. Create a conda environment for HAPHPIPE__
+__1. Create a conda environment with HAPHPIPE__
 
 ```bash
 conda create -n haphpipe haphpipe
@@ -39,12 +39,6 @@ This will copy GATK into your conda environment.
 
 NOTE: HAPHPIPE was developed and tested using GATK 3.8.
 
-__4. Install HAPHPIPE__
-
-```
-pip install git+git://github.com/gwcbi/haphpipe.git
-```
-
 ## Demo
 
 After successful installation, the demo dataset can be run to ensure HAPHPIPE is installed and set up correctly. 
@@ -56,7 +50,7 @@ A specific outdirectory can be specified by:
 `hp_demo --outdir $outdir_name`
 
 The output of the entire demo is as such
-[put fig here]()
+![demo](haphpipe_demo.png)
 
 If running the entire demo is not desired, this command can be executed to just pull the references included in HAPHPIPE into the directory that is specified (default is `.`).
 
