@@ -50,7 +50,7 @@ A specific outdirectory can be specified by:
 `hp_demo --outdir $outdir_name`
 
 The output of the entire demo is as such
-![demo](haphpipe_demo.png)
+![demo](Demo_directory_fig3.png)
 
 If running the entire demo is not desired, this command can be executed to just pull the references included in HAPHPIPE into the directory that is specified (default is `.`).
 
