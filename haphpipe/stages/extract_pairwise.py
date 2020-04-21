@@ -58,20 +58,25 @@ def extract_pairwise(align_json=None, outfile=None,
     outh = sys.stdout if outfile is None else open(outfile, 'w')
     
     if outfmt == 'nuc_fa' or outfmt == 'prot_fa':
+        ###--Uzma--Where was this defined/what does it do?
         jaln = load_slot_json(align_json, 'padded_alignments')
         if refreg is None:
             for newname, alignment in list(jaln.items()):
+                ###--Uzma--If the fourth index of the alignment value is not -1, the 3 index of each alignment value?
                 nucstr = ''.join(t[2] for t in alignment if t[3] != -1)
                 nucstr = nucstr.replace('*', 'N')
                 print('>%s' % newname, file=outh)                
                 if outfmt == 'nuc_fa':
                     print(sequtils.wrap(nucstr), file=outh)
                 else:
-                    s = Seq(nucstr[:(old_div(len(nucstr),3))*3])
+                    ###--Uzma--not sure about this
+                    s = Seq(nucstr[:(old_div(len(nucstr),3))*3])  
                     print(sequtils.wrap(str(s.translate())), file=outh)
         else:
+            ###--Uzma--shouldn't there be a second argument in addition to "k"?
             refmap = {sequtils.parse_seq_id(k)['ref']:k for k in list(jaln.keys())}
             chrom, ref_s, ref_e = sequtils.region_to_tuple(refreg)
+            ###--Uzma--if ref_s is a string, how can you subtract one?
             ref_s = ref_s - 1
             alignment = jaln[refmap[chrom]]
             
@@ -91,6 +96,7 @@ def extract_pairwise(align_json=None, outfile=None,
 
             nucstr = ''.join(t[2] for t in alignment[aln_s:aln_e] if t[3] != -1)
             nucstr = nucstr.replace('*', 'N')
+             ###--Uzma--Is chrom still equal to m.group('ref'), spos, epos?
             print('>%s (%s)' % (refmap[chrom], refreg), file=outh)
             if outfmt == 'nuc_fa':            
                 print(sequtils.wrap(nucstr), file=outh)
@@ -99,11 +105,13 @@ def extract_pairwise(align_json=None, outfile=None,
                 print(sequtils.wrap(str(s.translate())), file=outh)
 
     elif outfmt == 'aln_fa':
+         ###--Uzma_Still don't know load_slot_json
         jaln = load_slot_json(align_json, 'padded_alignments')
         for newname, alignment in list(jaln.items()):
             aid = sequtils.parse_seq_id(newname)
             rstr = ''.join(t[1] for t in alignment).replace('*', 'N')
             qstr = ''.join(t[2] for t in alignment).replace('*', 'N')
+             ###--Uzma--What does aid[] do?
             print('>ref|%s|' % aid['ref'], file=outh)
             print(sequtils.wrap(rstr), file=outh)
             print('>sid|%s|' % aid['sid'], file=outh)
