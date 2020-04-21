@@ -107,6 +107,7 @@ def pairwise_align(
         'padded_gtf': [],
     }
     # {(sid, ref): [(reg, list(alignment)), ...], ...}
+    ###--Uzma--is ^ above what defauldict is supposed to be formatted like?
     all_nuc_aln = defaultdict(list)
 
     for amprec in SeqIO.parse(amplicons_fa, 'fasta'):
@@ -114,6 +115,7 @@ def pairwise_align(
         aid = sequtils.parse_seq_id(amprec.id)
         # Find the GTF line used to orient this amplicon
         try:
+            ###--Uzma--as in previous stage, what does aid[...] do?
             gl = ampdict[(aid['ref'], aid['reg'])]
         except KeyError:
             poss_gl = [t for t in ampdict.keys() if t[1] == aid['reg']]
