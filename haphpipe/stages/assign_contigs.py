@@ -30,8 +30,10 @@ def blast_tophits(query, reference):
                ], 
                stdin=open(query, 'rU'), stdout=PIPE, stderr=PIPE)
     o, e = p.communicate()
+    ###--Uzma--would the user call e.strip?
     if e.strip('\n'):
         print(e, file=sys.stderr)
+        ###--Uzma--why would you do this?
     return [l.split('\t') for l in o.strip('\n').split('\n')]
 
 
@@ -59,8 +61,10 @@ def assign_contigs(contigs_fa=None, ref_db=None, outdir='.'):
     hits = blast_tophits(contigs_fa, ref_db)
     with open(out1, 'w') as outh:
         print('\n'.join('\t'.join(h) for h in hits), file=outh)
-    
+        
+     ###--Uzma--it would be nice to know the output of the blastn command
     contig_dict = {s.id:s for s in SeqIO.parse(contigs_fa, 'fasta')}
+     ###--Uzma--what is defaultdict?
     by_subtype = defaultdict(list)
     for h in hits:
         by_subtype[h[1].split('.')[0]].append(contig_dict[h[0]])
@@ -69,6 +73,7 @@ def assign_contigs(contigs_fa=None, ref_db=None, outdir='.'):
     for st in subtypes:
         st_contigs = os.path.join(outdir, '%s.contigs.fa' % st)
         out2.append((st, st_contigs))
+        ###--Uzma-from st.ljust(15), what is the significance of the 15 length?
         print('%s%d' % (st.ljust(15), len(by_subtype[st])), file=sys.stderr)
         with open(st_contigs, 'w') as outh:
             for s in by_subtype[st]:
