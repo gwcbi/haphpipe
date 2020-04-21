@@ -43,9 +43,12 @@ def annotate_from_ref(
         debug=False,
     ):
     outh = sys.stdout if outfile is None else open(outfile, 'w')
+    ###--Uzma--same questions for this stage and extract_pairwise
+
     jaln = load_slot_json(align_json, 'padded_alignments')    
     
     refmap = {parse_seq_id(k)['ref']:k for k in list(jaln.keys())}
+    ###--Uzma--still don't understand gtf_parser, mainly the GTFRow part
     for gr in gtf_parser(ref_gtf):
         if gr.feature not in ['gene',]:
             continue
