@@ -36,11 +36,13 @@ def stageparser(parser):
 
 
 def reads_per_region(reg, alnbam):
-    cmd = 'samtools view -f 66 -F 268 %s \'%s:%s-%s\' | wc -l' % (alnbam, reg[0], reg[1], reg[2])
+    ###--Uzma--first part  samtools command?
+    cmd = 'samtools view -f 66 of-F 268 %s \'%s:%s-%s\' | wc -l' % (alnbam, reg[0], reg[1], reg[2])
     o = check_output(cmd, shell=True)
     return int(o.strip())
 
 def snps_per_region(reg, vcfgz):
+    ###--Uzma--first part of bcftools command? If so, would't cmd have different names, like cmd1 and cmd2, so they don't override each other?
     cmd = [
         """bcftools view -i 'TYPE="snp" & DP>100' %s '%s:%s-%s'""" % (vcfgz, reg[0], reg[1], reg[2]),
         'bcftools stats',
@@ -51,6 +53,7 @@ def snps_per_region(reg, vcfgz):
     return int(o.strip())    
 
 def reads_per_amplicon(conbed, alnbam):
+    ###--Uzma--defaultdict? (It was also in an another stage)
     ret = defaultdict(dict)
     bedlines = (l.strip('\n').split('\t') for l in open(conbed, 'rU'))
     for t in bedlines:
@@ -61,6 +64,7 @@ def post_assembly(consensus_fa=None, annotations_gtf=None, align_bam=None, varia
         debug=False,
     ):
     check_dependency('bcftools')
+    ###--Uzma--why not check dependency of samtools?
     
     summary = [
         ['chrom', 'feature', 'start', 'end', 'length',
@@ -68,6 +72,7 @@ def post_assembly(consensus_fa=None, annotations_gtf=None, align_bam=None, varia
          'call_reg', 'call_len',
          'match', 'mismatch', 'rgap', 'qgap', 'uncalled'],
     ]
+    ###--Uzma--as earlier, I don't understand gtf_parser (GTFRow aspect)
     for gr in gtf_parser(annotations_gtf):
         gr.attrs['nfrags'] = reads_per_region((gr.chrom, gr.start, gr.end), align_bam)
         gr.attrs['nsnps'] = snps_per_region((gr.chrom, gr.start, gr.end), variants_vcf)        
