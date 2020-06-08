@@ -720,7 +720,9 @@ EOF
             [[ $? -eq 0 ]] && echo "[---$SN---] ($(date)) COMPLETED: $stage" || \
                 (  echo "[---$SN---] ($(date)) FAILED: $stage" && exit 1 )
         done
-        echo "region02 did not run because there are only 3 sequences in the alignment"
+        echo
+        echo "NOTE: region02 did not run because there are only 3 sequences in the alignment"
+        echo
     fi
 fi
 
