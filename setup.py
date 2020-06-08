@@ -62,7 +62,7 @@ setuptools.setup(name='haphpipe',
               # hp_phylo subcommands
               'hp_multiple_align=haphpipe.stages.multiple_align:console',
               'hp_model_test=haphpipe.stages.model_test:console',
-              'hp_build_tree=haphpipe.stages.build_tree:console',
+              'hp_build_tree_NG=haphpipe.stages.build_tree_NG:console',
           ],
       },
       zip_safe=False,

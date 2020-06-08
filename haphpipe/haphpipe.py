@@ -52,7 +52,7 @@ from haphpipe.stages import summary_stats
 # Phylo stages
 from haphpipe.stages import multiple_align
 from haphpipe.stages import model_test
-from haphpipe.stages import build_tree
+from haphpipe.stages import build_tree_NG
 # Miscellaneous
 from haphpipe.stages import demo
 
@@ -199,8 +199,8 @@ def console():
     model_test.stageparser(
         sub.add_parser('model_test', formatter_class=HF)
     )
-    build_tree.stageparser(
-        sub.add_parser('build_tree', formatter_class=HF)
+    build_tree_NG.stageparser(
+        sub.add_parser('build_tree_NG', formatter_class=HF)
     )
 
     # Miscellaneous
