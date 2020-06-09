@@ -15,7 +15,8 @@ __copyright__ = "Copyright (C) 2020 Uzma Rentia and Margaret C. Steiner"
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
     group1.add_argument('--seqs', type=sysutils.existing_file,
-                        help='Input alignment in FASTA, PHYLIP, or CATG format')
+                        help='Input alignment in FASTA or PHYLIP format')
+    group1.add_argument('--in_type',type=str,help="File format: FASTA or PHYLIP")
     group1.add_argument('--output_name', type=str,
                         help='Run name for trees')
     group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
@@ -81,17 +82,20 @@ def stageparser(parser):
 
     parser.set_defaults(func=build_tree_NG)
 
-def check_name_compatibility(fasta,outname):
-    symbol_list = [' ',';',',',':','(',')',"'"]
-    with open(fasta,'r') as file, open(outname,'w') as file_new:
+def check_name_compatibility(input,outname,in_type):
+    if in_type == 'FASTA':
+        symbol_list = [' ',';',',',':','(',')',"'"]
+    elif in_type == 'PHYLIP':
+        symbol_list = [';', ',', ':', '(', ')', "'"]
+    with open(input,'r') as file, open(outname,'w') as file_new:
         in_file = file.read()
         for sym in symbol_list:
             if sym in in_file:
-                in_file = in_file.replace(sym,"")
+                in_file = in_file.replace(sym,"_")
         file_new.write(in_file)
 
-def build_tree_NG(seqs=None, output_name='hp_tree', outdir='.',
-                     treedir='hp_tree', model='GTR', partition_analysis=None, bs_trees=None,
+def build_tree_NG(seqs=None, in_type='FASTA', output_name='hp_tree', outdir='.',
+                     treedir='hp_tree', model='GTR', bs_trees=None,
                      outgroup=None,branch_length=None, consense=None,rand_tree=None, pars_tree=None,
                      user_tree=None, search=None, search_1random=None, all=None,
                      constraint_tree=None,bsconverge=None, bs_msa=None,
@@ -118,7 +122,10 @@ def build_tree_NG(seqs=None, output_name='hp_tree', outdir='.',
     sysutils.command_runner([cmd0], 'build_tree_NG', quiet, logfile, debug)
 
     # fix seq names
-    check_name_compatibility(seqs,os.path.join(output_dir,'seqs_fixednames.fasta'))
+    if in_type=='FASTA':
+        check_name_compatibility(seqs,os.path.join(output_dir,'seqs_fixednames.fasta'),in_type)
+    elif in_type=='PHYLIP':
+        check_name_compatibility(seqs, os.path.join(output_dir, 'seqs_fixednames.phy'), in_type)
 
     # Create temporary directory
     tempdir = sysutils.create_tempdir('build_tree_NG', None, quiet, logfile)
@@ -126,9 +133,10 @@ def build_tree_NG(seqs=None, output_name='hp_tree', outdir='.',
     # start raxml command
     cmd1 = ['raxml-ng', '--prefix %s/%s' % (os.path.abspath(tempdir), output_name), '--threads %d' % ncpu, '--seed %d' % seed, '--model %s' % model]
     if seqs is not None:
-        cmd1 += ['--msa', '%s' % os.path.abspath(os.path.abspath(os.path.join(output_dir,'seqs_fixednames.fasta')))]
-    if partition_analysis is not None:
-        cmd1 += ['--model', '%s' % os.path.abspath(partition_analysis)]
+        if in_type == 'FASTA':
+            cmd1 += ['--msa', '%s' % os.path.join(output_dir,'seqs_fixednames.fasta')]
+        elif in_type == 'PHYLIP':
+            cmd1 += ['--msa', '%s' % os.path.join(output_dir, 'seqs_fixednames.phy')]
     if branch_length is not None:
         cmd1 += ['--brlen', '%s' % branch_length]
     if consense is not None:
