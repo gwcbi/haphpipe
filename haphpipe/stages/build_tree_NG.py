@@ -16,7 +16,7 @@ def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
     group1.add_argument('--seqs', type=sysutils.existing_file,
                         help='Input alignment in FASTA or PHYLIP format')
-    group1.add_argument('--in_type',type=str,help="File format: FASTA or PHYLIP")
+    group1.add_argument('--in_type',type=str,help="File format: FASTA or PHYLIP (Default is FASTA)")
     group1.add_argument('--output_name', type=str,
                         help='Run name for trees')
     group1.add_argument('--outdir', type=sysutils.existing_dir, default='.',
