@@ -28,15 +28,15 @@ __copyright__ = 'Copyright (C) 2020 Margaret C. Steiner and (C) 2019 Matthew L. 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
     group1.add_argument('--fq1',type=sysutils.existing_file,
-                        help='Fastq file with read 1')
+                        help='Fastq file with read 1 OR single read fasta file')
     group1.add_argument('--fq2', type=sysutils.existing_file,
                         help='Fastq file with read 2')
     group1.add_argument('--ref_fa',type=sysutils.existing_file,help="Reference FASTA file")
     group1.add_argument('--outdir',type=sysutils.existing_dir,default='.',help='Output directory')
+    group1.add_argument('--single', action='store_true', help="Single read date (Default: FALSE, e.g. paired-end)")
 
     group2 = parser.add_argument_group('CliqueSNV Options')
-    group2.add_argument('--jardir',type=str,default='.',help='Path to clique-snv.jar (existing) OR location for clique-snv.jar download')
-    group2.add_argument('--method',type=str,default='snv-illumina',help='Method: either snv-illumina or snv-pacbio')
+    group2.add_argument('--jardir',type=str,default='.',help='Path to clique-snv.jar (existing) (Default: current directory)')
     group2.add_argument('--O22min',type=float,help="minimum threshold for O22 value")
     group2.add_argument('--O22minfreq',type=float,help="minimum threshold for O22 frequency relative to read coverage")
     group2.add_argument('--printlog',action='store_true',help="Print log data to console")
@@ -59,13 +59,15 @@ def stageparser(parser):
 
     parser.set_defaults(func=cliquesnv)
 
-def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',method='snv-illumina',O22min=None,O22minfreq=None,printlog=None,
+def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',O22min=None,O22minfreq=None,printlog=None,single=False,
               merging=None,fasta_format='extended4',outputstart=None,outputend=None,keep_tmp=False, quiet=False, logfile=None, debug=False,ncpu=1):
 
     # check dependencies and required arguments
-    if fq1 is None or fq2 is None:
+    if single == False and (fq1 is None or fq2 is None):
         raise MissingRequiredArgument("Either fq1 or fq2 missing.")
-    if fq1 is not None and fq2 is not None and ref_fa is None:
+    if single == True and fq1 is None:
+        raise MissingRequiredArgument("Read file fq1 missing.")
+    if ref_fa is None:
         raise MissingRequiredArgument("Reference FASTA missing.")
 
     sysutils.check_dependency('samtools')
@@ -91,28 +93,49 @@ def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',method='snv-il
     for iv in regions:
         sysutils.log_message('%s -- %s:%d-%d\n' % iv, quiet, logfile)
 
-    # remove .1 and .2 from read names
-    fq1_c = os.path.join(tempdir,"fq1_corrected.fastq")
-    fq2_c = os.path.join(tempdir, "fq2_corrected.fastq")
-    cmd01 = ["cat %s | sed 's/\.1 / /' > %s" % (fq1,fq1_c)]
-    cmd02 = ["cat %s | sed 's/\.2 / /' > %s" % (fq2,fq2_c)]
-    sysutils.command_runner([cmd01,cmd02],'clique_snv:setup',quiet,logfile,debug)
+    if single == False: #paired end
+        # remove .1 and .2 from read names
+        fq1_c = os.path.join(tempdir,"fq1_corrected.fastq")
+        fq2_c = os.path.join(tempdir, "fq2_corrected.fastq")
+        cmd01 = ["cat %s | sed 's/\.1 / /' > %s" % (fq1,fq1_c)]
+        cmd02 = ["cat %s | sed 's/\.2 / /' > %s" % (fq2,fq2_c)]
+        sysutils.command_runner([cmd01,cmd02],'clique_snv:setup',quiet,logfile,debug)
 
-    # Create alignment for each REFERENCE in the reconstruction regions
-    alnmap = {}
-    for cs, rname, spos, epos in regions:
-        if rname not in alnmap:
-            # Create alignment
-            tmp_ref_fa = os.path.join(tempdir, 'ref.%d.fa' % len(alnmap))
-            tmp_sam = os.path.join(tempdir, 'aligned.%d.sam' % len(alnmap))
-            SeqIO.write(refs[rname], tmp_ref_fa, 'fasta')
-            cmd1 = ['bwa', 'index', tmp_ref_fa, ]
-            cmd2 = ['bwa', 'mem', tmp_ref_fa, fq1_c, fq2_c, '|', 'samtools', 'view', '-h', '-F', '12', '>', tmp_sam, ]
-            cmd3 = ['rm', '-f', '%s.*' % tmp_ref_fa]
-            sysutils.command_runner(
-                [cmd1, cmd2, cmd3], 'clique_snv:setup', quiet, logfile, debug
-            )
-            alnmap[rname] = (tmp_ref_fa, tmp_sam)
+        # Create alignment for each REFERENCE in the reconstruction regions
+        alnmap = {}
+        for cs, rname, spos, epos in regions:
+            if rname not in alnmap:
+                # Create alignment
+                tmp_ref_fa = os.path.join(tempdir, 'ref.%d.fa' % len(alnmap))
+                tmp_sam = os.path.join(tempdir, 'aligned.%d.sam' % len(alnmap))
+                SeqIO.write(refs[rname], tmp_ref_fa, 'fasta')
+                cmd1 = ['bwa', 'index', tmp_ref_fa, ]
+                cmd2 = ['bwa', 'mem', tmp_ref_fa, fq1_c, fq2_c, '|', 'samtools', 'view', '-h', '-F', '12', '>', tmp_sam, ]
+                cmd3 = ['rm', '-f', '%s.*' % tmp_ref_fa]
+                sysutils.command_runner(
+                    [cmd1, cmd2, cmd3], 'clique_snv:setup', quiet, logfile, debug
+                )
+                alnmap[rname] = (tmp_ref_fa, tmp_sam)
+
+    else: #single read
+
+        # Create alignment for each REFERENCE in the reconstruction regions
+        alnmap = {}
+        for cs, rname, spos, epos in regions:
+            if rname not in alnmap:
+                # Create alignment
+                tmp_ref_fa = os.path.join(tempdir, 'ref.%d.fa' % len(alnmap))
+                tmp_sam = os.path.join(tempdir, 'aligned.%d.sam' % len(alnmap))
+                SeqIO.write(refs[rname], tmp_ref_fa, 'fasta')
+                cmd1 = ['bwa', 'index', tmp_ref_fa, ]
+                cmd2 = ['bwa', 'mem', tmp_ref_fa, fq1, '|', 'samtools', 'view', '-h', '-F', '12', '>',
+                        tmp_sam, ]
+                cmd3 = ['rm', '-f', '%s.*' % tmp_ref_fa]
+                sysutils.command_runner(
+                    [cmd1, cmd2, cmd3], 'clique_snv:setup', quiet, logfile, debug
+                )
+                alnmap[rname] = (tmp_ref_fa, tmp_sam)
+
 
     # Run CliqueSNV for each region
     cmd4 = ['mkdir -p %s' % os.path.join(outdir, 'clique_snv')]
@@ -127,6 +150,7 @@ def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',method='snv-il
         cs = '%s_%s' % (cs, rname.split('|')[-2])
 
         samfile = os.path.join(tempdir,'aligned.%d.sam' % i)
+        method = 'snv-illumina'
         cmd5 = ['java -jar %s -m %s -in %s -threads %d -outDir %s -fdf %s'
                 % (os.path.join(jardir,'clique-snv.jar'),method,samfile,
                    ncpu,tempdir,fasta_format)]
@@ -153,6 +177,33 @@ def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',method='snv-il
             shutil.copy(os.path.join(tempdir, '%s' % outname1), os.path.join(outdir,'clique_snv/%s/%s.txt' % (cs,cs)))
         if os.path.exists(os.path.join(tempdir, '%s' % outname2)):
             shutil.copy(os.path.join(tempdir, '%s' % outname2), os.path.join(outdir,'clique_snv/%s/%s.fasta' % (cs,cs)))
+
+
+        # parse output file
+        with open(os.path.join(outdir,'clique_snv/%s/%s_summary.txt' % (cs,cs)),'w') as sumfile, open(os.path.join(outdir,'clique_snv/%s/%s.txt' % (cs,cs)),'r') as infile:
+            l = infile.readlines()
+            print(l)
+            freqs = []
+            haps = []
+            tempnum=''
+            for line in l:
+                if "SNV got" in line:
+                    print(line)
+                    tempnum = line.split(' ')[2]
+                if "frequency" in line:
+                    freqs += [line.split(' ')[2][:-2]]
+                if "haplotype=" in line:
+                    haps += [line.split('=')[1][1:-2]]
+            sumfile.write('snv_num_haps\t%s\n' % tempnum)
+            for k in range(len(freqs)):
+                sumfile.write('freq_hap_%d\t%s\n' % (k,freqs[k]))
+                sumfile.write('len_hap_%d\t%s\n' % (k,len(haps[k])))
+
+        with open(os.path.join(outdir, 'clique_snv/%s/%s.fasta' % (cs, cs)), 'r') as fastafile:
+            fastadata=fastafile.read().replace('aligned.%d' % i,rname)
+            with open(os.path.join(outdir, 'clique_snv/%s/%s.fasta' % (cs, cs)), 'w') as newfastafile:
+                newfastafile.write(fastadata)
+
         i += 1
 
     if not keep_tmp:
