@@ -44,6 +44,7 @@ from haphpipe.stages import finalize_assembly
 # Haplotype stages
 from haphpipe.stages import predict_haplo
 from haphpipe.stages import ph_parser
+from haphpipe.stages import cliquesnv
 # Annotate stages
 from haphpipe.stages import pairwise_align
 from haphpipe.stages import extract_pairwise
@@ -81,6 +82,7 @@ Commands:
  -- Haplotype
     predict_haplo            assemble haplotypes with PredictHaplo
     ph_parser                parse output from PredictHaplo.
+    cliquesnv                assemble haplotypes with CliqueSNV
 
  -- Description
     pairwise_align           align consensus to an annotated reference
@@ -90,7 +92,7 @@ Commands:
  -- Phylo
     multiple_align           multiple sequence alignment
     model_test               tests for model of evolution using ModelTest
-    build_tree               bilds phylogenetic tree with RAxML
+    build_tree               bilds phylogenetic tree with RAxML-NG
 
  -- Miscellaneous
     demo                     setup demo directory and test data
@@ -173,6 +175,9 @@ def console():
     )
     ph_parser.stageparser(
         sub.add_parser('ph_parser', formatter_class=HF)
+    )
+    cliquesnv.stageparser(
+        sub.add_parser('cliquesnv', formatter_class=HF)
     )
 
     # Annotate/Description stages
