@@ -4,13 +4,14 @@ import sys
 import argparse
 import shutil
 
+from past.utils import old_div
 from Bio import SeqIO
 
 from haphpipe.utils import sysutils
 from haphpipe.utils.sysutils import MissingRequiredArgument
 
-__author__ = 'Margaret C. Steiner and Matthew L. Bendall'
-__copyright__ = 'Copyright (C) 2020 Margaret C. Steiner and (C) 2019 Matthew L. Bendall'
+__author__ = 'Margaret C. Steiner, Keylie M. Gibson, and Matthew L. Bendall'
+__copyright__ = 'Copyright (C) 2020 Margaret C. Steiner and (C) 2019 Keylie M. Gibson and Matthew L. Bendall'
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -193,13 +194,16 @@ def cliquesnv(fq1=None,fq2=None,fqU=None,ref_fa=None,outdir='.',jardir='.',O22mi
                 if "SNV got" in line:
                     tempnum = line.split(' ')[2]
                 if "frequency" in line:
-                    freqs += [line.split(' ')[2][:-2]]
+                    freqs += [float(line.split(' ')[2][:-2])]
                 if "haplotype=" in line:
                     haps += [line.split('=')[1][1:-2]]
-            sumfile.write('snv_num_haps\t%s\n' % tempnum)
-            for k in range(len(freqs)):
-                sumfile.write('freq_hap_%d\t%s\n' % (k+1,freqs[k]))
-                sumfile.write('len_hap_%d\t%s\n' % (k+1,len(haps[k])))
+            sumfile.write('CliqueSNV_num_hap\t%s\n' % tempnum)
+
+            freq_sqrd = [x ** 2 for x in freqs]
+            freq_sqrd_sum = sum(freq_sqrd)
+            hap_div = ((old_div(7000, (7000 - 1))) * (1 - freq_sqrd_sum))
+            sumfile.write('CliqueSNV_hap_diversity\t%s\n' % hap_div)
+            sumfile.write('CliqueSNV_seq_len\t%s\n' % len(haps[0]))
 
         with open(os.path.join(outdir, 'clique_snv/%s/%s.fasta' % (cs, cs)), 'r') as fastafile:
             fastadata=fastafile.read().replace('aligned.%d' % i,rname)
