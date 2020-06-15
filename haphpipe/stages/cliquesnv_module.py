@@ -28,12 +28,12 @@ __copyright__ = 'Copyright (C) 2020 Margaret C. Steiner and (C) 2019 Matthew L. 
 def stageparser(parser):
     group1 = parser.add_argument_group('Input/Output')
     group1.add_argument('--fq1',type=sysutils.existing_file,
-                        help='Fastq file with read 1 OR single read fasta file')
+                        help='Fastq file with read 1')
     group1.add_argument('--fq2', type=sysutils.existing_file,
                         help='Fastq file with read 2')
+    group1.add_argument('--fqU',type=sysutils.existing_file,help='Fastq file with unpaired reads')
     group1.add_argument('--ref_fa',type=sysutils.existing_file,help="Reference FASTA file")
     group1.add_argument('--outdir',type=sysutils.existing_dir,default='.',help='Output directory')
-    group1.add_argument('--single', action='store_true', help="Single read date (Default: FALSE, e.g. paired-end)")
 
     group2 = parser.add_argument_group('CliqueSNV Options')
     group2.add_argument('--jardir',type=str,default='.',help='Path to clique-snv.jar (existing) (Default: current directory)')
@@ -59,14 +59,18 @@ def stageparser(parser):
 
     parser.set_defaults(func=cliquesnv)
 
-def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',O22min=None,O22minfreq=None,printlog=None,single=False,
+def cliquesnv(fq1=None,fq2=None,fqU=None,ref_fa=None,outdir='.',jardir='.',O22min=None,O22minfreq=None,printlog=None,single=False,
               merging=None,fasta_format='extended4',outputstart=None,outputend=None,keep_tmp=False, quiet=False, logfile=None, debug=False,ncpu=1):
 
+    # check if paired vs. single
+    if fq1 is None and fq2 is None and fqU is not None:
+        single=True
+
     # check dependencies and required arguments
+    if fq1 is None and fq2 is None and fqU is None:
+        raise MissingRequiredArgument("No fastq files given.")
     if single == False and (fq1 is None or fq2 is None):
         raise MissingRequiredArgument("Either fq1 or fq2 missing.")
-    if single == True and fq1 is None:
-        raise MissingRequiredArgument("Read file fq1 missing.")
     if ref_fa is None:
         raise MissingRequiredArgument("Reference FASTA missing.")
 
@@ -128,7 +132,7 @@ def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',O22min=None,O2
                 tmp_sam = os.path.join(tempdir, 'aligned.%d.sam' % len(alnmap))
                 SeqIO.write(refs[rname], tmp_ref_fa, 'fasta')
                 cmd1 = ['bwa', 'index', tmp_ref_fa, ]
-                cmd2 = ['bwa', 'mem', tmp_ref_fa, fq1, '|', 'samtools', 'view', '-h', '-F', '12', '>',
+                cmd2 = ['bwa', 'mem', tmp_ref_fa, fqU, '|', 'samtools', 'view', '-h', '-F', '12', '>',
                         tmp_sam, ]
                 cmd3 = ['rm', '-f', '%s.*' % tmp_ref_fa]
                 sysutils.command_runner(
@@ -182,13 +186,11 @@ def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',O22min=None,O2
         # parse output file
         with open(os.path.join(outdir,'clique_snv/%s/%s_summary.txt' % (cs,cs)),'w') as sumfile, open(os.path.join(outdir,'clique_snv/%s/%s.txt' % (cs,cs)),'r') as infile:
             l = infile.readlines()
-            print(l)
             freqs = []
             haps = []
             tempnum=''
             for line in l:
                 if "SNV got" in line:
-                    print(line)
                     tempnum = line.split(' ')[2]
                 if "frequency" in line:
                     freqs += [line.split(' ')[2][:-2]]
@@ -196,8 +198,8 @@ def cliquesnv(fq1=None,fq2=None,ref_fa=None,outdir='.',jardir='.',O22min=None,O2
                     haps += [line.split('=')[1][1:-2]]
             sumfile.write('snv_num_haps\t%s\n' % tempnum)
             for k in range(len(freqs)):
-                sumfile.write('freq_hap_%d\t%s\n' % (k,freqs[k]))
-                sumfile.write('len_hap_%d\t%s\n' % (k,len(haps[k])))
+                sumfile.write('freq_hap_%d\t%s\n' % (k+1,freqs[k]))
+                sumfile.write('len_hap_%d\t%s\n' % (k+1,len(haps[k])))
 
         with open(os.path.join(outdir, 'clique_snv/%s/%s.fasta' % (cs, cs)), 'r') as fastafile:
             fastadata=fastafile.read().replace('aligned.%d' % i,rname)
