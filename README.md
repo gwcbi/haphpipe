@@ -218,7 +218,7 @@ haphpipe ph_parser best.fas
 
 ##### cliquesnv
 
-Haplotype identification with CliqueSNV. Input is reads in FASTQ format and and reference sequence in FASTA format. Output is a FASTA file containing haplotypes with frequencies, a TXT file with CliqueSNV parameters and output, and a parsed summary TXT file. _Note: The CliqueSNV JAR file must be downloaded before running this stage, available [here](https://github.com/vtsyvina/CliqueSNV). If not in the current directory, provide the path to its directory using the `--jardir` option._ 
+Haplotype identification with CliqueSNV. Input is reads in FASTQ format and and reference sequence in FASTA format. Output is a FASTA file containing haplotypes with frequencies, a TXT file with CliqueSNV parameters and output, and a parsed summary TXT file (similar to the output of _ph_parser_). The CliqueSNV JAR file must be downloaded before running this stage, available [here](https://github.com/vtsyvina/CliqueSNV). If the file is not located in the current directory, provide the path to its directory using the `--jardir` option.
 Example to execute:
 ```
 haphpipe cliquesnv corrected_1.fastq --fq2 corrected_2.fastq --ref_fa final.fna
