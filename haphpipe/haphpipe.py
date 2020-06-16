@@ -92,7 +92,7 @@ Commands:
  -- Phylo
     multiple_align           multiple sequence alignment
     model_test               tests for model of evolution using ModelTest
-    build_tree               bilds phylogenetic tree with RAxML-NG
+    build_tree_NG            bilds phylogenetic tree with RAxML-NG
 
  -- Miscellaneous
     demo                     setup demo directory and test data
