@@ -4,7 +4,7 @@ _**HA**plotype and **PH**ylodynamics pipeline for viral assembly, population gen
 
 Our full User Guide is available [here](https://gwcbi.github.io/haphpipe_docs/).
 
-![schematic](haphpipe_schematic_new.png)
+![schematic](haphpipe_schematic_v2.png)
 
 ## Installation
 
@@ -216,6 +216,15 @@ Example to execute:
 haphpipe ph_parser best.fas
 ```
 
+##### cliquesnv
+
+Haplotype identification with CliqueSNV. Input is reads in FASTQ format and and reference sequence in FASTA format. Output is a FASTA file containing haplotypes with frequencies, a TXT file with CliqueSNV parameters and output, and a parsed summary TXT file. _Note: The CliqueSNV JAR file must be downloaded before running this stage, available [here](https://github.com/vtsyvina/CliqueSNV). If not in the current directory, provide the path to its directory using the `--jardir` option._ 
+Example to execute:
+```
+haphpipe cliquesnv corrected_1.fastq --fq2 corrected_2.fastq --ref_fa final.fna
+```
+
+
 ### Description
 
 Stages to annotate and extract regions from sequences using a reference sequence and GTF file. Also includes a module that calculates summary statistics.
@@ -264,10 +273,10 @@ Example to execute:
 haphpipe model_test --seqs alignment.fasta
 ```
 
-##### build_tree 
+##### build_tree_NG 
 
-Create phylogenetic tree with RAxML. Input is an aligned FASTA or PHYLIP file with sequences. Output are tre files.
+Create phylogenetic tree with RAxML-NG. Input is an aligned FASTA or PHYLIP file with sequences. Output are tre files.
 Example to execute: 
 ```
-haphpipe model_test --run_full_analysis --seqs alignment.phy
+haphpipe build_tree_NG --seqs alignment.fasta --all --model GTR
 ```

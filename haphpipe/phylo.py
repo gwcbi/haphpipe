@@ -38,7 +38,7 @@ def console():
     )
     multiple_align.stageparser(sub.add_parser('multiple_align'))
     model_test.stageparser(sub.add_parser('model_test'))
-    build_tree.stageparser(sub.add_parser('build_tree'))
+    build_tree_NG.stageparser(sub.add_parser('build_tree'))
 
 
     args = parser.parse_args()

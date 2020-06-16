@@ -59,10 +59,11 @@ setuptools.setup(name='haphpipe',
               # hp_haplotype subcommands
               'hp_predict_haplo=haphpipe.stages.predict_haplo:console',
               'hp_ph_parser=haphpipe.stages.ph_parser:console',
+              'hp_cliquesnv=haphpipe.stages.cliquesnv:console',
               # hp_phylo subcommands
               'hp_multiple_align=haphpipe.stages.multiple_align:console',
               'hp_model_test=haphpipe.stages.model_test:console',
-              'hp_build_tree=haphpipe.stages.build_tree:console',
+              'hp_build_tree_NG=haphpipe.stages.build_tree_NG:console',
           ],
       },
       zip_safe=False,

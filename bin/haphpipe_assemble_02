@@ -77,8 +77,7 @@ mkdir -p $outdir
 
 echo "[---$SN---] ($(date)) read1:             $raw1"
 echo "[---$SN---] ($(date)) read2:             $raw2"
-echo "[---$SN---] ($(date)) reference_fasta:   $refFA"
-echo "[---$SN---] ($(date)) reference_gtf:     $refGTF"
+echo "[---$SN---] ($(date)) reference_fasta:   $ampFA"
 echo "[---$SN---] ($(date)) outdir:            $outdir"
 echo "[---$SN---] ($(date)) num CPU:           $ncpu"
 

@@ -5,7 +5,7 @@
 __author__ = 'Matthew L. Bendall, Keylie M. Gibson, Margaret C. Steiner, and Uzma Rentia'
 __copyright__ = "Copyright (C) 2019 Matthew L. Bendall and Keylie M. Gibson, (C) 2020 Margaret C. Steiner and Uzma Rentia"
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
