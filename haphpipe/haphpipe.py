@@ -81,7 +81,7 @@ Commands:
 
  -- Haplotype
     predict_haplo            assemble haplotypes with PredictHaplo
-    ph_parser                parse output from PredictHaplo.
+    ph_parser                parse output from PredictHaplo
     cliquesnv                assemble haplotypes with CliqueSNV
 
  -- Description
@@ -92,7 +92,7 @@ Commands:
  -- Phylo
     multiple_align           multiple sequence alignment
     model_test               tests for model of evolution using ModelTest
-    build_tree_NG            bilds phylogenetic tree with RAxML-NG
+    build_tree_NG            builds phylogenetic tree with RAxML-NG
 
  -- Miscellaneous
     demo                     setup demo directory and test data
