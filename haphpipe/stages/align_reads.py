@@ -224,6 +224,7 @@ def align_reads(
         'M=%s' % os.path.join(tempdir, 'rmdup.metrics.txt'),
         'I=%s' % cur_bam,
         'O=%s' % os.path.join(tempdir, 'rmdup.bam'),
+        'VALIDATION_STRINGENCY=LENIENT"
     ]
     if remove_duplicates:
         cmd8 += ['REMOVE_DUPLICATES=true', ]
