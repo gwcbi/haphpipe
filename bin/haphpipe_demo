@@ -277,7 +277,7 @@ fi
 # Step 2c: Sample 3: SRR8525938
 ###############################################################################
 # Step 1: Fastq-dump
-stage="Demo Sample 1: SRR8525938"
+stage="Demo Sample 3: SRR8525938"
 sra='SRR8525938'
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
@@ -379,7 +379,7 @@ fi
 # Step 2d: Sample 4: SRR8525939
 ###############################################################################
 # Step 1: Fastq-dump
-stage="Demo Sample 1: SRR8525939"
+stage="Demo Sample 4: SRR8525939"
 sra='SRR8525939'
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
@@ -481,7 +481,7 @@ fi
 # Step 2e: Sample 5: SRR8525940
 ###############################################################################
 # Step 1: Fastq-dump
-stage="Demo Sample 1: SRR8525940"
+stage="Demo Sample 5: SRR8525940"
 sra='SRR8525940'
 echo -e "\n[---$SN---] ($(date)) Stage: $stage"
 
